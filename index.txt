@@ -1,5 +1,5 @@
 1:HL["/doodle-mesh-rider-analytics/_next/static/css/65453483b6d24a49.css","style",{"crossOrigin":""}]
-0:["r03IHUKFuMcL82wVLx-YH",[[["",{"children":["__PAGE__",{}]},"$undefined","$undefined",true],"$L2",[[["$","link","0",{"rel":"stylesheet","href":"/doodle-mesh-rider-analytics/_next/static/css/65453483b6d24a49.css","precedence":"next","crossOrigin":""}]],"$L3"]]]]
+0:["mzToWplwxvm4gxjnUJtDI",[[["",{"children":["__PAGE__",{}]},"$undefined","$undefined",true],"$L2",[[["$","link","0",{"rel":"stylesheet","href":"/doodle-mesh-rider-analytics/_next/static/css/65453483b6d24a49.css","precedence":"next","crossOrigin":""}]],"$L3"]]]]
 4:I[6954,[],""]
 5:I[7264,[],""]
 7:I[8297,[],""]
