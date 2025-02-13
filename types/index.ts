@@ -22,7 +22,6 @@ export interface MeshStat {
 
 export interface LinkStateData {
   localtime: any;
-  localtime: any;
   timestamp: number;
   noise: number;
   activity: number;

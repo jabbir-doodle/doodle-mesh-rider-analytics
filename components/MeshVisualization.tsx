@@ -25,6 +25,7 @@ const MeshVisualization: React.FC<Props> = ({ meshStats = [], onNodeClick }) => 
     };
   };
 
+
   // Quality-based indicators – returns both a color and a status text.
   const getQualityInfo = (tq: number) => {
     const quality = (tq / 255) * 100;
@@ -258,8 +259,31 @@ const MeshVisualization: React.FC<Props> = ({ meshStats = [], onNodeClick }) => 
             );
           })}
         </svg>
-      </div>
+        <div className="absolute top-2 right-2 bg-gray-800/80 backdrop-blur p-3 rounded-lg z-10">
+  <div className="space-y-2">
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-[#22C55E]"></div>
+      <span className="text-xs text-gray-300">Excellent (75-100%)</span>
     </div>
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-[#EAB308]"></div>
+      <span className="text-xs text-gray-300">Good (50-75%)</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-[#F97316]"></div>
+      <span className="text-xs text-gray-300">Fair (25-50%)</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <div className="w-3 h-3 rounded-full bg-[#EF4444]"></div>
+      <span className="text-xs text-gray-300">Poor (0-25%)</span>
+    </div>
+  </div>
+</div>
+
+      </div>
+      
+    </div>
+    
   );
 };
 
