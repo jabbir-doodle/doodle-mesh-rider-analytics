@@ -72,7 +72,7 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
           <h1 className="glowing-text text-white">Link Status Log Analyzer</h1>
-            <p className="text-gray-400">Upload your SmartRadio log file to analyze performance metrics</p>
+            <p className="text-gray-400">Upload your Mesh Rider Radio log file to analyze performance metrics</p>
           </div>
           <FileUpload onFileLoaded={handleFileLoaded} />
         </div>
