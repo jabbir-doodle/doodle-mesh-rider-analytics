@@ -35,11 +35,11 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
   const steps = [
     {
       title: "Download Log File",
-      description: "Download the 'Link Status Log' from Web GUI or Command Line (.tar.gz file)"
+      description: "Download the 'Link Status Log' from Mesh Rider app(Android, windows, linux) or Web GUI or Command Line (.tar.gz file)"
     },
     {
       title: "Extract Archive",
-      description: "Extract the .tar.gz file into a folder (Right-click → Extract All in Windows)"
+      description: "Extract the .tar.gz file into a folder (Right-click → Extract All in Android,Windows, Linux)"
     },
     {
       title: "Locate Log File",
