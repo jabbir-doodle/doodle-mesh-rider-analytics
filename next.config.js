@@ -5,10 +5,6 @@ const nextConfig = {
     config.resolve.fallback = { fs: false };
     return config;
   },
-  distDir: 'out',
-  trailingSlash: true,
-  basePath: '/doodle-mesh-rider-analytics',
-  output: 'export',
 };
 
 module.exports = nextConfig;
