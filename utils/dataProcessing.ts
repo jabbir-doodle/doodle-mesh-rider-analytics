@@ -18,6 +18,8 @@ export const parseLogData = (logContent: string): ChartData[] => {
           cpuLoad5m: (data.sysinfo.cpu_load[1] / 65535) * 100,
           cpuLoad15m: (data.sysinfo.cpu_load[2] / 65535) * 100,
           memory: data.sysinfo.freemem / (1024 * 1024),
+          value: parseFloat(data.noise), // or any appropriate value
+          type: 'noise' // or any appropriate type
         };
       });
   } catch (error) {

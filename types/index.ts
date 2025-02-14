@@ -51,3 +51,12 @@ export interface ChartData {
   value: number;
   type: string;
 }
+export interface ChartData {
+  timestamp: number;
+  noise: number;
+  activity: number;
+  cpuLoad: number;
+  cpuLoad5m: number;
+  cpuLoad15m: number;
+  memory: number;
+}
