@@ -1,8 +1,9 @@
 'use client';
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LineChart,
   ComposedChart,
+  LineChart,
   Bar,
   Line,
   XAxis,
@@ -10,10 +11,21 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  Legend,
 } from 'recharts';
-import { Activity, Signal, Cpu, Upload } from 'lucide-react';
+import {
+  Activity,
+  Signal,
+  Cpu,
+  Upload,
+  Maximize2,
+  Clock,
+} from 'lucide-react';
 import { MetricCard } from './shared/MetricCard';
 
+/* -----------------------------
+   Types & Interfaces
+----------------------------- */
 interface StationDetailsProps {
   station: any;
   timeSeriesData: any[];
@@ -24,6 +36,14 @@ interface StationDetailsProps {
 interface ChartProps {
   data: any[];
 }
+
+interface PacketLossChartProps extends ChartProps {
+  displayChoice: string;
+}
+
+/* -----------------------------
+   Utility Functions
+----------------------------- */
 const formatTimestamp = (value: number) =>
   new Date(value).toLocaleString('en-US', {
     month: 'short',
@@ -34,6 +54,9 @@ const formatTimestamp = (value: number) =>
     hour12: true,
   });
 
+/* -----------------------------
+   Chart Components
+----------------------------- */
 const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, displayChoice }) => (
   <div className="h-64">
     <ResponsiveContainer width="100%" height="100%">
@@ -44,10 +67,7 @@ const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, dis
           type="number"
           domain={['auto', 'auto']}
           tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString("en-US", {
-              timeZone: "America/New_York",
-              hour12: true,
-            })
+            new Date(value * 1000).toLocaleTimeString('en-US', { hour12: true })
           }
           stroke="#9CA3AF"
         />
@@ -56,7 +76,15 @@ const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, dis
           stroke="#9CA3AF"
           label={{ value: 'RSSI (dBm)', angle: -90, position: 'insideLeft' }}
         />
-        <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))}  contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+        <Tooltip
+          labelFormatter={(label) => formatTimestamp(Number(label))}
+          contentStyle={{
+            backgroundColor: '#1F2937',
+            border: 'none',
+            borderRadius: '0.5rem',
+            color: '#F3F4F6',
+          }}
+        />
         {(displayChoice === 'all' || displayChoice === 'rssi') && (
           <Line type="monotone" dataKey="rssi" stroke="#3B82F6" name="Overall RSSI" dot={false} strokeWidth={2} />
         )}
@@ -71,10 +99,6 @@ const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, dis
   </div>
 );
 
-interface PacketLossChartProps extends ChartProps {
-  displayChoice: string;
-}
-
 const PacketLossChart: React.FC<PacketLossChartProps> = ({ data, displayChoice }) => (
   <div className="h-64">
     <ResponsiveContainer width="100%" height="100%">
@@ -85,60 +109,62 @@ const PacketLossChart: React.FC<PacketLossChartProps> = ({ data, displayChoice }
           type="number"
           domain={['auto', 'auto']}
           tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString("en-US", {
-              timeZone: "America/New_York",
-              hour12: true,
-            })
+            new Date(value * 1000).toLocaleTimeString('en-US', { hour12: true })
           }
           stroke="#9CA3AF"
         />
-        {displayChoice === "all" ? (
-          <>
-            <YAxis
-              yAxisId="left"
-              domain={[0, 'auto']}
-              stroke="#9CA3AF"
-              label={{ value: 'Packet Loss Ratio', angle: -90, position: 'insideLeft' }}
-            />
-            <YAxis
-              yAxisId="right"
-              orientation="right"
-              domain={[0, 'auto']}
-              stroke="#9CA3AF"
-              label={{ value: 'Tx Retries', angle: -90, position: 'insideRight' }}
-            />
-          </>
-        ) : displayChoice === "pl" ? (
-          <YAxis
-            domain={[0, 'auto']}
-            stroke="#9CA3AF"
-            label={{ value: 'Packet Loss Ratio', angle: -90, position: 'insideLeft' }}
-          />
-        ) : (
-          <YAxis
-            domain={[0, 'auto']}
-            stroke="#9CA3AF"
-            label={{ value: 'Tx Retries', angle: -90, position: 'insideLeft' }}
-          />
-        )}
-        <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+        <YAxis
+          yAxisId="left"
+          domain={[0, (dataMax: number) => Math.max(5, Math.ceil(dataMax))]}
+          stroke="#9CA3AF"
+          label={{
+            value: 'Packet Loss Ratio',
+            angle: -90,
+            position: 'insideLeft',
+            style: { fill: '#9CA3AF' }
+          }}
+        />
+        <YAxis
+          yAxisId="right"
+          orientation="right"
+          domain={[0, (dataMax: number) => Math.max(10, Math.ceil(dataMax))]}
+          stroke="#9CA3AF"
+          label={{
+            value: 'Tx Retries',
+            angle: -90,
+            position: 'insideRight',
+            style: { fill: '#9CA3AF' }
+          }}
+        />
+        <Tooltip
+          labelFormatter={(label) => formatTimestamp(Number(label))}
+          contentStyle={{
+            backgroundColor: '#1F2937',
+            border: 'none',
+            borderRadius: '0.5rem',
+            color: '#F3F4F6'
+          }}
+        />
+        <Legend />
         {(displayChoice === 'all' || displayChoice === 'pl') && (
           <Bar
+            yAxisId="left"
             dataKey="pl_ratio"
             barSize={20}
             fill="#EF4444"
             name="Packet Loss Ratio"
-            yAxisId={displayChoice === 'all' ? "left" : undefined}
+            radius={[4, 4, 0, 0]}
           />
         )}
         {(displayChoice === 'all' || displayChoice === 'retries') && (
           <Line
+            yAxisId="right"
+            type="monotone"
             dataKey="tx_retries"
             stroke="#F59E0B"
+            name="Tx Retries"
             dot={false}
             strokeWidth={2}
-            name="Retries"
-            yAxisId={displayChoice === 'all' ? "right" : undefined}
           />
         )}
       </ComposedChart>
@@ -156,8 +182,8 @@ const McsChart: React.FC<ChartProps> = ({ data }) => (
           type="number"
           domain={['auto', 'auto']}
           tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString("en-US", {
-              timeZone: "America/New_York",
+            new Date(value * 1000).toLocaleTimeString('en-US', {
+              timeZone: 'America/New_York',
               hour12: true,
             })
           }
@@ -169,73 +195,574 @@ const McsChart: React.FC<ChartProps> = ({ data }) => (
           label={{ value: 'MCS Index', angle: -90, position: 'insideLeft' }}
           ticks={[0, 3, 7, 11, 15]}
         />
-        <Tooltip   labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+        <Tooltip
+          labelFormatter={(label) => formatTimestamp(Number(label))}
+          contentStyle={{
+            backgroundColor: '#1F2937',
+            border: 'none',
+            borderRadius: '0.5rem',
+            color: '#F3F4F6',
+          }}
+        />
         <Line type="stepAfter" dataKey="mcs" stroke="#8B5CF6" name="MCS Index" dot={false} strokeWidth={2} />
       </LineChart>
     </ResponsiveContainer>
   </div>
 );
 
-const StationDetails: React.FC<StationDetailsProps> = ({ station, timeSeriesData, localtime, onClose }) => {
-  const [selectedMetric, setSelectedMetric] = useState<string>('packetLoss');
+const InactiveChart: React.FC<ChartProps> = ({ data }) => (
+  <div className="h-64">
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={data}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+        <XAxis
+          dataKey="timestamp"
+          type="number"
+          domain={['auto', 'auto']}
+          tickFormatter={(value: number) =>
+            new Date(value * 1000).toLocaleTimeString('en-US', {
+              timeZone: 'America/New_York',
+              hour12: true,
+            })
+          }
+          stroke="#9CA3AF"
+        />
+        <YAxis
+          domain={[0, 'auto']}
+          stroke="#9CA3AF"
+          label={{ value: 'Inactive Time (ms)', angle: -90, position: 'insideLeft' }}
+        />
+        <Tooltip
+          labelFormatter={(label) => formatTimestamp(Number(label))}
+          contentStyle={{
+            backgroundColor: '#1F2937',
+            border: 'none',
+            borderRadius: '0.5rem',
+            color: '#F3F4F6',
+          }}
+        />
+        <Line type="monotone" dataKey="inactive" stroke="#EC4899" name="Inactive Time" dot={false} strokeWidth={2} />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+);
+
+/* -----------------------------
+   Main Component
+----------------------------- */
+const StationDetails: React.FC<StationDetailsProps> = ({
+  station,
+  timeSeriesData,
+  localtime,
+  onClose
+}) => {
+  const [selectedMetric, setSelectedMetric] = useState<string>('');
   const [rssiChoice, setRssiChoice] = useState<string>('all');
   const [plChoice, setPlChoice] = useState<string>('all');
-  const formattedLocalTime = new Date(localtime * 1000).toLocaleString("en-US", {
-    timeZone: "America/New_York",
+  const [isFullView, setIsFullView] = useState<boolean>(false);
+  const [showOverview, setShowOverview] = useState<boolean>(true);
+  const [compareMode, setCompareMode] = useState<boolean>(false);
+  const [selectedGraphs, setSelectedGraphs] = useState<string[]>([]);
+
+  const formattedTime = new Date(localtime * 1000).toLocaleString('en-US', {
     hour12: true,
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   });
-  
-  const graphTitle =
-    selectedMetric === 'rssi'
-      ? `RSSI ${rssiChoice === 'all' ? '- Overall & Antennas' : rssiChoice === 'rssi' ? '- Overall' : rssiChoice === 'ant1' ? '- Antenna 1' : '- Antenna 2'}`
-      : selectedMetric === 'packetLoss'
-      ? 'Packet Loss Ratio'
-      : selectedMetric === 'mcs'
-      ? 'MCS Index'
-      : '';
-  const renderChart = () => {
-    if (selectedMetric === 'rssi')
-      return <RssiChart data={timeSeriesData} displayChoice={rssiChoice} />;
-    if (selectedMetric === 'packetLoss')
-      return <PacketLossChart data={timeSeriesData} displayChoice={plChoice} />;
-    if (selectedMetric === 'mcs') return <McsChart data={timeSeriesData} />;
-    return null;
+
+
+  const handleOverviewChartClick = (metricType: string) => {
+    setSelectedMetric(metricType);
+    setShowOverview(false);
+    if (metricType === 'rssi') {
+      setRssiChoice('all');
+    } else if (metricType === 'packetLoss') {
+      setPlChoice('all');
+    }
   };
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gray-900 rounded-lg p-6 w-[80%] max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-bold text-white">Station Details: {station.mac}</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">×</button>
-        </div>
-        <div className="grid grid-cols-5 gap-4 mb-6">
-          <MetricCard title="Local Time" value={formattedLocalTime} icon={Activity} status="normal" />
-          <MetricCard title="Inactive Time" value={station.inactive} unit="ms" icon={Activity} status="warning" />
-          <MetricCard title="RSSI" value={station.rssi} subValue={`Ant1: ${station.rssi_ant[0]} dBm, Ant2: ${station.rssi_ant[1]} dBm`} icon={Signal} onClick={() => setSelectedMetric('rssi')} status="warning" />
-          <MetricCard title="Packet Loss Ratio" value={station.pl_ratio.toFixed(2)} icon={Upload} onClick={() => setSelectedMetric('packetLoss')} status="warning" />
-          <MetricCard title="MCS Index" value={station.mcs} icon={Cpu} onClick={() => setSelectedMetric('mcs')} status="warning" />
-        </div>
-        <div className="bg-gray-800 p-4 rounded-lg mb-4">
-          <h3 className="text-lg font-semibold text-white mb-4">{graphTitle}</h3>
-          {selectedMetric === 'rssi' && (
-            <div className="flex space-x-4 mb-4">
-              <button onClick={() => setRssiChoice('all')} className={`px-2 py-1 rounded ${rssiChoice === 'all' ? 'bg-blue-500' : 'bg-gray-700'}`}>Overall & Antennas</button>
-              <button onClick={() => setRssiChoice('rssi')} className={`px-2 py-1 rounded ${rssiChoice === 'rssi' ? 'bg-blue-500' : 'bg-gray-700'}`}>Overall</button>
-              <button onClick={() => setRssiChoice('ant1')} className={`px-2 py-1 rounded ${rssiChoice === 'ant1' ? 'bg-blue-500' : 'bg-gray-700'}`}>Antenna 1</button>
-              <button onClick={() => setRssiChoice('ant2')} className={`px-2 py-1 rounded ${rssiChoice === 'ant2' ? 'bg-blue-500' : 'bg-gray-700'}`}>Antenna 2</button>
-            </div>
-          )}
-          {selectedMetric === 'packetLoss' && (
-            <div className="flex space-x-4 mb-4">
-              <button onClick={() => setPlChoice('all')} className={`px-2 py-1 rounded ${plChoice === 'all' ? 'bg-blue-500' : 'bg-gray-700'}`}>All</button>
-              <button onClick={() => setPlChoice('pl')} className={`px-2 py-1 rounded ${plChoice === 'pl' ? 'bg-blue-500' : 'bg-gray-700'}`}>Packet Loss</button>
-              <button onClick={() => setPlChoice('retries')} className={`px-2 py-1 rounded ${plChoice === 'retries' ? 'bg-blue-500' : 'bg-gray-700'}`}>Retries</button>
-            </div>
-          )}
-          {renderChart()}
-        </div>
+
+
+  const getGraphTitle = (metric: string) => {
+    switch (metric) {
+      case 'rssi':
+        return `RSSI ${rssiChoice === 'all' ? '- Overall & Antennas' : rssiChoice}`;
+      case 'packetLoss':
+        return `Packet Loss Ratio ${plChoice === 'all' ? '' : `- ${plChoice}`}`;
+      case 'mcs':
+        return 'MCS Index';
+      case 'inactive':
+        return 'Inactive Time';
+      default:
+        return '';
+    }
+  };
+
+  const handleCompareSelect = (metric: string) => {
+    if (selectedGraphs.includes(metric)) {
+      setSelectedGraphs(selectedGraphs.filter(g => g !== metric));
+    } else if (selectedGraphs.length < 2) {
+      setSelectedGraphs([...selectedGraphs, metric]);
+    }
+  };
+
+  const ComparisonChart = () => {
+    return (
+      <div className="h-96">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+            <XAxis
+              dataKey="timestamp"
+              type="number"
+              scale="time"
+              domain={['auto', 'auto']}
+              tickFormatter={(value: number) =>
+                new Date(value * 1000).toLocaleTimeString('en-US', { hour12: true })
+              }
+              stroke="#9CA3AF"
+            />
+            {selectedGraphs.includes('rssi') && (
+              <YAxis
+                yAxisId="rssi"
+                orientation="left"
+                domain={[-90, -20]}
+                stroke="#3B82F6"
+                label={{ value: 'RSSI (dBm)', angle: -90, position: 'insideLeft', style: { fill: '#3B82F6' } }}
+              />
+            )}
+            {selectedGraphs.includes('packetLoss') && (
+              <YAxis
+                yAxisId="pl"
+                orientation="right"
+                domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax * 1.1))]}
+                stroke="#EF4444"
+                label={{ value: 'Packet Loss Ratio', angle: -90, position: 'insideRight', style: { fill: '#EF4444' } }}
+              />
+            )}
+            {selectedGraphs.includes('mcs') && (
+              <YAxis
+                yAxisId="mcs"
+                orientation="right"
+                domain={[0, 15]}
+                stroke="#8B5CF6"
+                label={{ value: 'MCS Index', angle: -90, position: 'insideRight', style: { fill: '#8B5CF6' } }}
+              />
+            )}
+            <Tooltip
+              labelFormatter={(label) => new Date(Number(label) * 1000).toLocaleTimeString('en-US', { hour12: true })}
+              contentStyle={{
+                backgroundColor: '#1F2937',
+                border: 'none',
+                borderRadius: '0.5rem',
+                color: '#F3F4F6',
+              }}
+            />
+            <Legend />
+            {selectedGraphs.includes('rssi') && (
+              <Line
+                yAxisId="rssi"
+                type="monotone"
+                dataKey="rssi"
+                stroke="#3B82F6"
+                name="RSSI"
+                dot={false}
+              />
+            )}
+            {selectedGraphs.includes('packetLoss') && (
+              <Bar
+                yAxisId="pl"
+                dataKey="pl_ratio"
+                fill="#EF4444"
+                name="Packet Loss"
+                opacity={0.8}
+              />
+            )}
+            {selectedGraphs.includes('mcs') && (
+              <Line
+                yAxisId="mcs"
+                type="stepAfter"
+                dataKey="mcs"
+                stroke="#8B5CF6"
+                name="MCS Index"
+                dot={false}
+              />
+            )}
+          </ComposedChart>
+        </ResponsiveContainer>
       </div>
-    </div>
+    );
+  };
+
+  const renderChart = () => {
+    switch (selectedMetric) {
+      case 'rssi':
+        return <RssiChart data={timeSeriesData} displayChoice={rssiChoice} />;
+      case 'packetLoss':
+        return <PacketLossChart data={timeSeriesData} displayChoice={plChoice} />;
+      case 'mcs':
+        return <McsChart data={timeSeriesData} />;
+      case 'inactive':
+        return <InactiveChart data={timeSeriesData} />;
+      default:
+        return null;
+    }
+  };
+
+
+  return (
+    <AnimatePresence>
+      <motion.div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <motion.div className="bg-gray-900 rounded-lg p-6 w-full sm:w-[80%] max-h-[90vh] overflow-y-auto">
+          {/* Header Section */}
+          <div className="flex flex-col gap-4 mb-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h2 className="text-xl font-bold text-white">
+                  Station Details: {station.mac}
+                </h2>
+                <div className="flex items-center text-sm text-gray-400 gap-2 mt-2">
+                  <Clock size={16} />
+                  <span>Local Time: {formattedTime}</span>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setShowOverview(!showOverview);
+                    if (!showOverview) setSelectedMetric('');
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  {showOverview ? 'Hide Overview' : 'Show Overview'}
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => {
+                    setCompareMode(!compareMode);
+                    setSelectedGraphs([]);
+                    setShowOverview(false);
+                    setSelectedMetric('');
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                  {compareMode ? 'Exit Compare' : 'Compare Metrics'}
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={onClose}
+                  className="text-gray-400 hover:text-white p-2"
+                >
+                  ×
+                </motion.button>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+              <MetricCard
+                title="Inactive Time"
+                value={station.inactive}
+                unit="ms"
+                icon={Activity}
+                onClick={() => {
+                  setSelectedMetric('inactive');
+                  setShowOverview(false);
+                }}
+                status="normal"
+              />
+            </motion.div>
+
+            {/* RSSI Card with fixed height */}
+            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+              <div
+                className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col justify-between h-[120px] cursor-pointer hover:bg-gray-800 transition-colors"
+                onClick={() => {
+                  setSelectedMetric('rssi');
+                  setShowOverview(false);
+                }}
+              >
+                <div className="flex items-center space-x-2 text-gray-400">
+                  <Signal className="h-5 w-5" />
+                  <span className="text-sm">RSSI</span>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {station.rssi} dBm
+                  </div>
+                  <div className="text-xs text-gray-500 truncate">
+                    A1:{station.rssi_ant[0]} A2:{station.rssi_ant[1]}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-300">Click to show graph</div>
+              </div>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+              <div
+                className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col justify-between h-[120px] cursor-pointer hover:bg-gray-800 transition-colors"
+                onClick={() => {
+                  setSelectedMetric('packetLoss');
+                  setShowOverview(false);
+                }}
+              >
+                <div className="flex items-center space-x-2 text-gray-400">
+                  <Upload className="h-5 w-5" />
+                  <span className="text-sm">Packet Loss Ratio</span>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {station.pl_ratio.toFixed(2)}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-300">Click to show graph</div>
+              </div>
+            </motion.div>
+
+            <motion.div whileHover={{ scale: 1.02 }} className="h-full">
+              <div
+                className="bg-gray-900 border border-gray-800 rounded-lg p-6 flex flex-col justify-between h-[120px] cursor-pointer hover:bg-gray-800 transition-colors"
+                onClick={() => {
+                  setSelectedMetric('mcs');
+                  setShowOverview(false);
+                }}
+              >
+                <div className="flex items-center space-x-2 text-gray-400">
+                  <Cpu className="h-5 w-5" />
+                  <span className="text-sm">MCS Index</span>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-yellow-400">
+                    {station.mcs}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-300">Click to show graph</div>
+              </div>
+            </motion.div>
+          </div>
+
+
+          {compareMode && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-6"
+            >
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-semibold text-white">Compare Metrics</h3>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setCompareMode(false)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ×
+                  </motion.button>
+                </div>
+                <div className="flex flex-wrap gap-3 mb-4">
+                  {['rssi', 'packetLoss', 'mcs', 'inactive'].map(metric => (
+                    <button
+                      key={metric}
+                      onClick={() => handleCompareSelect(metric)}
+                      className={`px-4 py-2 rounded-lg transition-colors ${selectedGraphs.includes(metric)
+                        ? 'bg-blue-600 text-white'
+                        : selectedGraphs.length >= 2
+                          ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        }`}
+                      disabled={selectedGraphs.length >= 2 && !selectedGraphs.includes(metric)}
+                    >
+                      {metric === 'rssi' ? 'RSSI' :
+                        metric === 'packetLoss' ? 'Packet Loss' :
+                          metric === 'mcs' ? 'MCS Index' : 'Inactive Time'}
+                    </button>
+                  ))}
+                </div>
+                {selectedGraphs.length > 0 && (
+                  <div className="mt-4">
+                    <ComparisonChart />
+                  </div>
+                )}
+                {selectedGraphs.length === 0 && (
+                  <div className="text-gray-400 text-sm mt-2">
+                    Select metrics to compare (max 2)
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Overview Graphs */}
+          {showOverview && !selectedMetric && !compareMode && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="bg-gray-800 p-4 rounded-lg cursor-pointer"
+                onClick={() => handleOverviewChartClick('packetLoss')}
+              >
+                <h4 className="text-md font-semibold text-white mb-2">Packet Loss Ratio</h4>
+                <PacketLossChart data={timeSeriesData} displayChoice="all" />
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="bg-gray-800 p-4 rounded-lg cursor-pointer"
+                onClick={() => handleOverviewChartClick('rssi')}
+              >
+                <h4 className="text-md font-semibold text-white mb-2">RSSI</h4>
+                <RssiChart data={timeSeriesData} displayChoice="all" />
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="bg-gray-800 p-4 rounded-lg cursor-pointer"
+                onClick={() => handleOverviewChartClick('inactive')}
+              >
+                <h4 className="text-md font-semibold text-white mb-2">Inactive Time</h4>
+                <InactiveChart data={timeSeriesData} />
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                className="bg-gray-800 p-4 rounded-lg cursor-pointer"
+                onClick={() => handleOverviewChartClick('mcs')}
+              >
+                <h4 className="text-md font-semibold text-white mb-2">MCS Index</h4>
+                <McsChart data={timeSeriesData} />
+              </motion.div>
+            </div>
+          )}
+
+          {/* Selected Metric Chart */}
+          {selectedMetric && !compareMode && (
+            <motion.div
+              layout
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gray-800 p-4 rounded-lg mb-4"
+            >
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">{getGraphTitle(selectedMetric)}</h3>
+                <div className="flex items-center space-x-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsFullView(true)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    <Maximize2 size={20} />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setSelectedMetric('')}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ×
+                  </motion.button>
+                </div>
+              </div>
+
+              {selectedMetric === 'rssi' && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <button
+                    onClick={() => setRssiChoice('all')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    Overall & Antennas
+                  </button>
+                  <button
+                    onClick={() => setRssiChoice('rssi')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'rssi' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    Overall
+                  </button>
+                  <button
+                    onClick={() => setRssiChoice('ant1')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'ant1' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    Antenna 1
+                  </button>
+                  <button
+                    onClick={() => setRssiChoice('ant2')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'ant2' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    Antenna 2
+                  </button>
+                </div>
+              )}
+
+              {selectedMetric === 'packetLoss' && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  <button
+                    onClick={() => setPlChoice('all')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${plChoice === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    All
+                  </button>
+                  <button
+                    onClick={() => setPlChoice('pl')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${plChoice === 'pl' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    Packet Loss
+                  </button>
+                  <button
+                    onClick={() => setPlChoice('retries')}
+                    className={`px-3 py-1.5 rounded-lg transition-colors ${plChoice === 'retries' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                      }`}
+                  >
+                    Retries
+                  </button>
+                </div>
+              )}
+
+              {renderChart()}
+            </motion.div>
+          )}
+        </motion.div>
+
+        {/* Full View Modal */}
+        <AnimatePresence>
+          {isFullView && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 p-4"
+            >
+              <motion.div
+                layout
+                initial={{ scale: 0.9 }}
+                animate={{ scale: 1 }}
+                exit={{ scale: 0.9 }}
+                className="bg-gray-900 rounded-lg p-6 w-full sm:w-[90%] max-h-[90vh] overflow-y-auto relative"
+              >
+                <div className="flex justify-end mb-4">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsFullView(false)}
+                    className="text-gray-400 hover:text-white"
+                  >
+                    ×
+                  </motion.button>
+                </div>
+                {renderChart()}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 

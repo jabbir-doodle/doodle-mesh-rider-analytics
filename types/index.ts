@@ -21,7 +21,7 @@ export interface MeshStat {
 }
 
 export interface LinkStateData {
-  localtime: any;
+  localtime: number;
   timestamp: number;
   noise: number;
   activity: number;
@@ -35,6 +35,7 @@ export interface LinkStateData {
   lnaStatus: string;
   stations: StationStat[];
   meshNodes: MeshStat[];
+  inactive?: number;
 }
 
 export interface MetricCardProps {

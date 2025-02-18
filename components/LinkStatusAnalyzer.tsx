@@ -21,8 +21,9 @@ import {
   Server,
   Radio,
 } from 'lucide-react';
-import { MetricCard } from '../components/shared/MetricCard';
+import { MetricCard } from './shared/MetricCard';
 import StationDetails from '../components/StationDetails';
+import OperationsDetails from '../components/OperationsDetails';
 import { parseLogFile, MeshStat } from '../utils/logParser';
 import FileUpload from './LogFileUpload';
 import { StationStat } from '@/types';
@@ -61,17 +62,20 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
     return logData
       .map((entry) => {
         const stationData = entry.stations.find((s) => s.mac === mac);
-        return stationData ? { timestamp: entry.timestamp, ...stationData } : null;
+        return stationData ? {
+          timestamp: entry.timestamp,
+          ...stationData,
+          inactive: stationData.inactive || 0  // Ensure inactive time is included
+        } : null;
       })
-      .filter((data) => data && data.rssi !== undefined);
+      .filter((data) => data !== null);
   };
-
   if (logData.length === 0) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6">
         <div className="max-w-2xl w-full">
           <div className="text-center mb-8">
-          <h1 className="glowing-text text-white">Link Status Log Analyzer</h1>
+            <h1 className="glowing-text text-white">Mesh Rider LogViewer</h1>
             <p className="text-gray-400">Upload your Mesh Rider Radio log file to analyze performance metrics</p>
           </div>
           <FileUpload onFileLoaded={handleFileLoaded} />
@@ -92,56 +96,88 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
       hour12: true,
     });
   return (
-<div className="p-6">
-  <div className="max-w-7xl mx-auto">
-  <div className="flex justify-between items-center mb-8">
-  {/* Left Side: Logo + Title + Subtitle */}
-  <div className="flex items-center space-x-3">
-    <img
-      src="/logo.png"
-      alt="Mesh Rider Logo"
-      className="h-12"
-    />
-    <div className="flex flex-col">
-      <h1 className="glowing-text text-white text-2xl font-bold">
-        Link Status Analysis
-      </h1>
-      <p className="text-gray-400 mt-1">
-        Analyzing {logData.length} log entries
-      </p>
-    </div>
-  </div>
-  
-  {/* Right Side: Button */}
-  <button
-    onClick={() => setLogData([])}
-    className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700"
-  >
-    Upload New File
-  </button>
-</div>
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          {/* Left Side: Logo + Title + Subtitle */}
+          <div className="flex items-center space-x-3">
+            <img
+              src="/logo.png"
+              alt="Mesh Rider Logo"
+              className="h-12"
+            />
+            <div className="flex flex-col">
+              <h1 className="glowing-text text-white text-2xl font-bold">
+                Mesh Rider LogViewer
+              </h1>
+              <p className="text-gray-400 mt-1">
+                Analyzing {logData.length} log entries
+              </p>
+            </div>
+          </div>
 
-        <div className="grid grid-cols-4 gap-6 mb-8">
-          <MetricCard title="Noise Floor" value={latestData.noise} unit=" dBm" icon={Signal} status={latestData.noise > -75 ? 'warning' : 'normal'} onClick={() => handleMetricClick('noiseFloor')} />
+          {/* Right Side: Button */}
+          <button
+            onClick={() => setLogData([])}
+            className="px-4 py-2 bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700"
+          >
+            Upload New File
+          </button>
+        </div>
+        {/* Add Operations Details Card */}
+        <div className="mb-8">
+          <OperationsDetails
+            operChan={latestData.channel}
+            operFreq={latestData.frequency}
+            chanWidth={Number(latestData.channelWidth)}
+            lnaStatus={Number(latestData.lnaStatus)}
+          />
+        </div>
+        <div className="mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Server className="h-5 w-5 text-blue-500" />
+            <h2 className="text-lg font-semibold text-white"> Performance Metrics</h2>
+          </div>
+          <p className="text-sm text-gray-400">Real-time monitoring of radio performance and system resources</p>
+        </div>
+        <div className="grid grid-cols-5 gap-6 mb-8">
+          <MetricCard title="Noise Floor" value={Math.round(latestData.noise)} unit=" dBm" icon={Signal} status={latestData.noise > -75 ? 'warning' : 'normal'} onClick={() => handleMetricClick('noiseFloor')} />
           <MetricCard title="Channel Activity" value={latestData.activity} unit="%" icon={Activity} status={latestData.activity > 70 ? 'warning' : 'normal'} onClick={() => handleMetricClick('activity')} />
           <MetricCard title="CPU Load" value={latestData.cpuLoad} unit="%" icon={Cpu} status={latestData.cpuLoad > 80 ? 'warning' : 'normal'} onClick={() => handleMetricClick('cpu')} />
           <MetricCard title="Memory Available" value={latestData.memory} unit=" MB" icon={Database} status="normal" onClick={() => handleMetricClick('memory')} />
+          <MetricCard title="Inactive Time" value={latestData.inactive || 0} unit="ms" icon={Activity} status="normal" onClick={() => handleMetricClick('inactive')} />
         </div>
+
         <div id="performance-graphs" className="grid grid-cols-2 gap-6 mb-8">
-          {(selectedMetric === 'noiseFloor' || selectedMetric === 'activity') && (
+          {selectedMetric === 'noiseFloor' && (
             <div className="bg-gray-900 p-6 rounded-lg col-span-2">
-              <h3 className="text-lg font-semibold text-white mb-4">RF Performance</h3>
+              <h3 className="text-lg font-semibold text-white mb-4">RF Performance - Noise Floor</h3>
               <div className="h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={logData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']}    tickFormatter={formatTimestamp} stroke="#9CA3AF" />
-                    <YAxis yAxisId="noise" domain={[-90, -50]} stroke="#60A5FA" />
-                    <YAxis yAxisId="activity" orientation="right" domain={[0, 100]} stroke="#34D399" />
+                    <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']} tickFormatter={formatTimestamp} stroke="#9CA3AF" />
+                    <YAxis domain={[-90, -50]} stroke="#60A5FA" tickFormatter={(value) => Math.round(value).toString()} />
                     <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
-                    <Line yAxisId="noise" type="monotone" dataKey="noise" name="Noise Floor" stroke="#60A5FA" dot={false} />
-                    <Line yAxisId="activity" type="monotone" dataKey="activity" name="Activity" stroke="#34D399" dot={false} />
+                    <Line type="monotone" dataKey="noise" name="Noise Floor" stroke="#60A5FA" dot={false} />
                   </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {selectedMetric === 'activity' && (
+            <div className="bg-gray-900 p-6 rounded-lg col-span-2">
+              <h3 className="text-lg font-semibold text-white mb-4">Channel Utilization</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={logData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']} tickFormatter={formatTimestamp} stroke="#9CA3AF" />
+                    <YAxis domain={[0, 100]} stroke="#34D399" />
+                    <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+                    <Bar dataKey="activity" name="Channel Activity" fill="#34D399" />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -153,19 +189,19 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={logData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                    <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']}    tickFormatter={(value) =>
-      new Date(value).toLocaleString('en-US', {
-        month: 'short',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true,
-      })
-    }
-    stroke="#9CA3AF" />
+                    <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']} tickFormatter={(value) =>
+                      new Date(value).toLocaleString('en-US', {
+                        month: 'short',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true,
+                      })
+                    }
+                      stroke="#9CA3AF" />
                     <YAxis domain={[0, 100]} stroke="#9CA3AF" />
-                    <Tooltip  labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+                    <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
                     <Line type="monotone" dataKey="cpuLoad" name="CPU Load" stroke="#A78BFA" dot={false} />
                     <Line type="monotone" dataKey="cpuLoad5m" name="CPU Load (5m)" stroke="#EC4899" dot={false} />
                     <Line type="monotone" dataKey="cpuLoad15m" name="CPU Load (15m)" stroke="#F59E0B" dot={false} />
@@ -183,17 +219,40 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
                     <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                     <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']} tickFormatter={(value) => new Date(value).toLocaleTimeString("en-US")} stroke="#9CA3AF" />
                     <YAxis domain={[0, 'auto']} stroke="#9CA3AF" />
-                    <Tooltip  labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+                    <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
                     <Line type="monotone" dataKey="memory" name="Available Memory" stroke="#F87171" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
             </div>
           )}
+          {selectedMetric === 'inactive' && (
+            <div className="bg-gray-900 p-6 rounded-lg col-span-2">
+              <h3 className="text-lg font-semibold text-white mb-4">Inactive Time</h3>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={logData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                    <XAxis dataKey="timestamp" type="number" domain={['auto', 'auto']} tickFormatter={formatTimestamp} stroke="#9CA3AF" />
+                    <YAxis domain={[0, 'auto']} stroke="#9CA3AF" />
+                    <Tooltip labelFormatter={(label) => formatTimestamp(Number(label))} contentStyle={{ backgroundColor: '#1F2937', border: 'none', borderRadius: '0.5rem', color: '#F3F4F6' }} />
+                    <Line type="monotone" dataKey="inactive" name="Inactive Time" stroke="#EC4899" dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
         </div>
         <div className="mb-8">
           <MeshVisualization
-            meshStats={latestData.meshNodes}
+            meshStats={latestData.meshNodes.map(node => ({
+              ...node,
+              quality: (node.tq / 255) * 100,
+              status: node.hop_status === 'direct' || node.hop_status === 'hop' ? node.hop_status : 'direct',
+              lastSeen: node.last_seen_msecs,
+              hop_status: node.hop_status === 'direct' || node.hop_status === 'hop' ? node.hop_status : 'direct',
+            }))}
             onNodeClick={(address: string) => {
               const stationObj = latestData.stations.find((s: any) => s.mac === address);
               if (stationObj) {
@@ -203,7 +262,7 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
           />
         </div>
         <div className="bg-gray-900 p-6 rounded-lg">
-          <h3 className="text-lg font-semibold text-white mb-4">Connected Stations ({latestData.stations.length})</h3>
+          <h3 className="text-lg font-semibold text-white mb-4">Direct Connections ({latestData.stations.length})</h3>
           <div className="space-y-4">
             {latestData.stations.map((station: any) => {
               const signalQuality = station.rssi > -65 ? 'good' : station.rssi > -75 ? 'fair' : 'poor';
