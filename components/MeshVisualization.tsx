@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+'use client';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Radio } from 'lucide-react';
+import { Network, Signal } from 'lucide-react';
 
 export interface MeshStat {
   orig_address: string;
@@ -14,24 +15,64 @@ interface Props {
   onNodeClick?: (address: string) => void;
 }
 
+const GridBackground = () => (
+  <svg className="absolute inset-0 w-full h-full opacity-[0.03]">
+    <defs>
+      <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill="url(#grid)" />
+  </svg>
+);
+
+interface ConnectionBeamProps {
+  start: { x: number; y: number };
+  end: { x: number; y: number };
+  quality: number;
+  type: 'direct' | 'hop';
+}
+
+const ConnectionBeam: React.FC<ConnectionBeamProps> = ({ start, end, quality, type }) => {
+  const pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
+  const color = type === 'direct' ? '#4ADE80' : '#FBBF24';
+
+  return (
+    <g>
+      <path
+        d={pathD}
+        stroke={color}
+        strokeWidth="2"
+        fill="none"
+        className="opacity-60"
+      />
+      <circle r="2" fill="white" opacity="0.8">
+        <animateMotion
+          dur="1.5s"
+          repeatCount="indefinite"
+          path={pathD}
+        />
+      </circle>
+    </g>
+  );
+};
+
 const MeshVisualization: React.FC<Props> = ({
   meshStats = [],
   onNodeClick = () => { }
 }) => {
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
-  const [showAnimation, setShowAnimation] = useState(true);
-  const [selectedView, setSelectedView] = useState<'2d' | '3d'>('2d');
-  const [linkLayout, setLinkLayout] = useState<'radial' | 'curved'>('curved');
+  const [showInitialHint, setShowInitialHint] = useState(true);
 
-  const center = { x: 250, y: 250 };
+  useEffect(() => {
+    const timer = setTimeout(() => setShowInitialHint(false), 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const center = { x: 400, y: 300 };
   const uniqueNodes = Array.from(new Set(meshStats.map((s) => s.orig_address)));
-  const directLinks = meshStats.filter((s) => s.hop_status === 'direct');
-  const hopLinks = meshStats.filter((s) => s.hop_status === 'hop');
+  const nodeRingRadius = 200;
 
-  // Radius for placing nodes between the small and large background circles.
-  const nodeRingRadius = 150;
-
-  // Return a position on the circle for each node
   const getNodePosition = (index: number, total: number) => {
     const angle = (2 * Math.PI * index) / total - Math.PI / 2;
     return {
@@ -40,178 +81,53 @@ const MeshVisualization: React.FC<Props> = ({
     };
   };
 
-  // Slightly offset the link text so multiple lines won't collide
-  const getTextPosition = (
-    source: { x: number; y: number },
-    target: { x: number; y: number },
-    offset: number
-  ) => {
-    const midX = (source.x + target.x) / 2;
-    const midY = (source.y + target.y) / 2;
-    const dx = target.x - source.x;
-    const dy = target.y - source.y;
-    const angle = Math.atan2(dy, dx);
-    return {
-      x: midX + offset * Math.cos(angle + Math.PI / 2),
-      y: midY + offset * Math.sin(angle + Math.PI / 2)
-    };
-  };
-
-  // Curved path from source to target
-  const getCurvedPath = (
-    source: { x: number; y: number },
-    target: { x: number; y: number },
-    index: number
-  ) => {
-    const midX = (source.x + target.x) / 2;
-    const midY = (source.y + target.y) / 2;
-    const dx = target.x - source.x;
-    const dy = target.y - source.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    const normalX = -dy / dist;
-    const normalY = dx / dist;
-    const curvature = dist * 0.2 * (index % 2 ? 1 : -1);
-    const controlX = midX + normalX * curvature;
-    const controlY = midY + normalY * curvature;
-    return {
-      path: `M ${source.x} ${source.y} Q ${controlX} ${controlY} ${target.x} ${target.y}`
-    };
-  };
-
-  // Straight line path
-  const getStraightPath = (
-    source: { x: number; y: number },
-    target: { x: number; y: number }
-  ) => {
-    return { path: `M ${source.x} ${source.y} L ${target.x} ${target.y}` };
-  };
-
-  // Map tq to color & textual "status"
   const getQualityInfo = (tq: number) => {
     const quality = (tq / 255) * 100;
-    if (quality >= 75) return { color: '#22C55E', status: 'Excellent' };
-    if (quality >= 50) return { color: '#EAB308', status: 'Good' };
-    if (quality >= 25) return { color: '#F97316', status: 'Fair' };
-    return { color: '#EF4444', status: 'Poor' };
+    if (quality >= 75) return { color: '#4ADE80', status: 'Excellent', textColor: '#22C55E' };
+    if (quality >= 50) return { color: '#FBBF24', status: 'Good', textColor: '#EAB308' };
+    if (quality >= 25) return { color: '#FB923C', status: 'Fair', textColor: '#F97316' };
+    return { color: '#EF4444', status: 'Poor', textColor: '#DC2626' };
   };
 
-  // Offsets for link label text
-  const directLabelBaseOffset = linkLayout === 'curved' ? 25 : 15;
-  const hopLabelBaseOffset = linkLayout === 'curved' ? -25 : -15;
-
   return (
-    <div className="bg-gray-900 p-6 rounded-lg shadow-xl">
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex items-center gap-4">
+    <div className="bg-[#0F172A] rounded-xl p-4 relative overflow-hidden">
+      <GridBackground />
+
+      <div className="relative z-10">
+        <div className="flex justify-between items-center mb-4 px-2">
           <div className="flex items-center gap-2">
-            <Radio className="w-5 h-5 text-blue-500" />
-            <h3 className="text-lg font-semibold text-white">
-              Mesh Network Topology
-            </h3>
+            <Network className="h-5 w-5 text-blue-500" />
+            <div>
+              <h2 className="text-lg font-semibold text-white">Network Topology</h2>
+              <p className="text-sm text-gray-400">Click on any node to view detailed network statistics</p>
+            </div>
           </div>
-          <div className="flex gap-2 bg-gray-800 p-1 rounded-lg">
-            <button
-              onClick={() => setSelectedView('2d')}
-              className={`px-3 py-1 rounded-md text-sm transition-colors ${selectedView === '2d'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-400 hover:text-white'
-                }`}
-            >
-              2D View
-            </button>
-            <button
-              onClick={() => setSelectedView('3d')}
-              className={`px-3 py-1 rounded-md text-sm transition-colors ${selectedView === '3d'
-                ? 'bg-blue-600 text-white'
-                : 'text-gray-400 hover:text-white'
-                }`}
-            >
-              3D View
-            </button>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#4ADE80]"></div>
+              <span className="text-sm text-gray-300">Direct Connection</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-[#FBBF24]"></div>
+              <span className="text-sm text-gray-300">Hopped Connection</span>
+            </div>
           </div>
         </div>
-        <button
-          onClick={() => setShowAnimation(!showAnimation)}
-          className="px-3 py-1.5 bg-gray-800 rounded-md text-sm text-gray-300 hover:bg-gray-700 flex items-center gap-2"
-        >
-          {showAnimation ? (
-            <>
-              <motion.span
-                animate={{ opacity: [1, 0] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                className="text-blue-500"
-              >
-                ●
-              </motion.span>
-              Pause Animation
-            </>
-          ) : (
-            'Start Animation'
-          )}
-        </button>
-      </div>
 
-      <div className="flex gap-2 mb-4">
-        {/* Curved Links Button */}
-        <button
-          onClick={() => setLinkLayout('curved')}
-          className={`flex items-center gap-1 px-3 py-1 rounded ${linkLayout === 'curved' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
-            }`}
-        >
-          {/* Inline SVG Icon for Curved Links */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+        {showInitialHint && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="absolute top-4 right-4 bg-blue-600/90 text-white px-4 py-2 rounded-lg shadow-lg z-20 flex items-center gap-2"
           >
-            {/* This is a simple curved path icon */}
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M4 16c1.333-2.667 3.667-4 6-4 2.333 0 4.667 1.333 6 4m0 0c1.333-2.667 3.667-4 6-4"
-            />
-          </svg>
-          <span>Curved Links</span>
-        </button>
+            <Signal className="h-4 w-4" />
+            <span>Click nodes to view details</span>
+          </motion.div>
+        )}
 
-        {/* Radial Links Button */}
-        <button
-          onClick={() => setLinkLayout('radial')}
-          className={`flex items-center gap-1 px-3 py-1 rounded ${linkLayout === 'radial' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-white'
-            }`}
-        >
-          {/* Inline SVG Icon for Radial Links */}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-5 h-5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            {/* This icon uses a circle with cross lines to evoke a radial design */}
-            <circle cx="12" cy="12" r="9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="12" y1="3" x2="12" y2="21" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <line x1="3" y1="12" x2="21" y2="12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          <span>Radial Links</span>
-        </button>
-      </div>
-
-      <div className="relative">
-        <motion.div
-          layout
-          className="bg-gray-800/50 backdrop-blur rounded-lg p-4"
-          initial={false}
-          animate={{ height: selectedView === '3d' ? '500px' : '400px' }}
-        >
-          <svg
-            width="400"
-            height={selectedView === '3d' ? '500' : '400'}
-            className="mx-auto"
-          >
+        <div className="relative bg-[#1E293B]/90 backdrop-blur rounded-xl p-4">
+          <svg width="800" height="600" className="mx-auto">
             <defs>
               <filter id="glow">
                 <feGaussianBlur stdDeviation="2" result="coloredBlur" />
@@ -220,143 +136,30 @@ const MeshVisualization: React.FC<Props> = ({
                   <feMergeNode in="SourceGraphic" />
                 </feMerge>
               </filter>
+              <radialGradient id="nodeGradient" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="white" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="white" stopOpacity="0" />
+              </radialGradient>
             </defs>
 
-            {/* Two background circles: smaller + larger */}
-            <circle
-              cx={center.x}
-              cy={center.y}
-              r={100}
-              fill="none"
-              stroke="#1F2937"
-              strokeWidth="1"
-              opacity="0.3"
-            />
-            <circle
-              cx={center.x}
-              cy={center.y}
-              r={200}
-              fill="none"
-              stroke="#1F2937"
-              strokeWidth="1"
-              opacity="0.3"
-            />
-
-            {/* Direct Links */}
-            {directLinks.map((stat, i) => {
-              const sourceIndex = uniqueNodes.indexOf(stat.orig_address);
-              const sourcePos = getNodePosition(sourceIndex, uniqueNodes.length);
-              const pathObj =
-                linkLayout === 'curved'
-                  ? getCurvedPath(sourcePos, center, i)
-                  : getStraightPath(sourcePos, center);
-              const textOffset = directLabelBaseOffset + i * 8;
-              const textPos = getTextPosition(sourcePos, center, textOffset);
+            {meshStats.map((stat, i) => {
+              const sourcePos = getNodePosition(
+                uniqueNodes.indexOf(stat.orig_address),
+                uniqueNodes.length
+              );
+              const quality = (stat.tq / 255) * 100;
 
               return (
-                <motion.g key={`direct-${i}`}>
-                  <motion.path
-                    d={pathObj.path}
-                    stroke="#3B82F6"
-                    strokeWidth={3}
-                    fill="none"
-                    initial={{ pathLength: 0, opacity: 0 }}
-                    animate={{ pathLength: 1, opacity: 0.8 }}
-                    transition={{ duration: 1 }}
-                  />
-                  <text
-                    x={textPos.x}
-                    y={textPos.y}
-                    fill="#3B82F6"
-                    fontSize="12"
-                    textAnchor="middle"
-                  >
-                    {Math.round((stat.tq / 255) * 100)}%
-                  </text>
-                  {showAnimation && (
-                    <motion.circle
-                      r="4"
-                      fill="#3B82F6"
-                      filter="url(#glow)"
-                      initial={{ opacity: 0 }}
-                      animate={{
-                        opacity: [0, 1, 0],
-                        offsetDistance: ['0%', '100%']
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.3
-                      }}
-                      style={{
-                        offsetPath: `path("${pathObj.path}")`,
-                        offsetRotate: 'auto'
-                      }}
-                    />
-                  )}
-                </motion.g>
+                <ConnectionBeam
+                  key={`beam-${i}`}
+                  start={sourcePos}
+                  end={center}
+                  quality={quality}
+                  type={stat.hop_status}
+                />
               );
             })}
 
-            {/* Hop Links */}
-            {hopLinks.map((stat, i) => {
-              const sourceIndex = uniqueNodes.indexOf(stat.orig_address);
-              const sourcePos = getNodePosition(sourceIndex, uniqueNodes.length);
-              const pathObj =
-                linkLayout === 'curved'
-                  ? getCurvedPath(sourcePos, center, -i)
-                  : getStraightPath(sourcePos, center);
-              const textOffset = hopLabelBaseOffset - i * 8;
-              const textPos = getTextPosition(sourcePos, center, textOffset);
-
-              return (
-                <motion.g key={`hop-${i}`}>
-                  <motion.path
-                    d={pathObj.path}
-                    stroke="#8B5CF6"
-                    strokeWidth="3"
-                    strokeDasharray="6,4"
-                    fill="none"
-                    opacity="0.8"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: 1 }}
-                    transition={{ duration: 1 }}
-                  />
-                  <text
-                    x={textPos.x}
-                    y={textPos.y}
-                    fill="#8B5CF6"
-                    fontSize="12"
-                    textAnchor="middle"
-                  >
-                    {Math.round((stat.tq / 255) * 100)}%
-                  </text>
-                  {showAnimation && (
-                    <motion.circle
-                      r="4"
-                      fill="#8B5CF6"
-                      filter="url(#glow)"
-                      initial={{ opacity: 0 }}
-                      animate={{
-                        opacity: [0, 1, 0],
-                        offsetDistance: ['0%', '100%']
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        delay: i * 0.3
-                      }}
-                      style={{
-                        offsetPath: `path("${pathObj.path}")`,
-                        offsetRotate: 'auto'
-                      }}
-                    />
-                  )}
-                </motion.g>
-              );
-            })}
-
-            {/* Nodes */}
             {uniqueNodes.map((address, i) => {
               const pos = getNodePosition(i, uniqueNodes.length);
               const nodeStats = meshStats.filter((s) => s.orig_address === address);
@@ -364,49 +167,43 @@ const MeshVisualization: React.FC<Props> = ({
               const qualityInfo = getQualityInfo(bestQuality);
 
               return (
-                <motion.g
+                <g
                   key={`node-${address}`}
-                  animate={{
-                    y: [0, selectedView === '3d' ? 10 : 0],
-                    scale: hoveredNode === address ? 1.1 : 1
-                  }}
-                  transition={{
-                    y: { duration: 2, repeat: Infinity, repeatType: 'reverse' },
-                    scale: { duration: 0.2 }
-                  }}
                   onMouseEnter={() => setHoveredNode(address)}
                   onMouseLeave={() => setHoveredNode(null)}
                   onClick={() => onNodeClick(address)}
-                  className="cursor-pointer"
+                  className="cursor-pointer transition-transform hover:scale-110"
                 >
+                  {hoveredNode === address && (
+                    <circle
+                      cx={pos.x}
+                      cy={pos.y}
+                      r="30"
+                      fill="url(#nodeGradient)"
+                      className="animate-pulse"
+                    />
+                  )}
+
                   <circle
                     cx={pos.x}
                     cy={pos.y}
                     r="12"
                     fill={qualityInfo.color}
-                    className="stroke-white stroke-2"
                     filter="url(#glow)"
+                    className="transition-all duration-300"
                   />
-                  <motion.circle
-                    cx={pos.x}
-                    cy={pos.y}
-                    r="16"
-                    fill="none"
-                    stroke={qualityInfo.color}
-                    strokeWidth="1"
-                    initial={{ opacity: 0.2 }}
-                    animate={{ opacity: [0.2, 0.5, 0.2], scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
+
                   <text
                     x={pos.x}
                     y={pos.y + 25}
                     textAnchor="middle"
-                    fill="#9CA3AF"
+                    fill="#94A3B8"
                     fontSize="12"
+                    className="pointer-events-none"
                   >
                     {address.slice(-4)}
                   </text>
+
                   <AnimatePresence>
                     {hoveredNode === address && (
                       <motion.g
@@ -415,94 +212,67 @@ const MeshVisualization: React.FC<Props> = ({
                         exit={{ opacity: 0, scale: 0.8 }}
                       >
                         <rect
-                          x={pos.x - 60}
-                          y={pos.y - 60}
-                          width="120"
-                          height="40"
-                          fill="#1F2937"
-                          rx="4"
+                          x={pos.x - 80}
+                          y={pos.y - 80}
+                          width="160"
+                          height="70"
+                          fill="#1E293B"
+                          rx="8"
+                          className="filter drop-shadow-lg"
                         />
                         <text
-                          x={pos.x}
-                          y={pos.y - 45}
-                          textAnchor="middle"
-                          fill="#F3F4F6"
-                          fontSize="10"
+                          x={pos.x - 70}
+                          y={pos.y - 55}
+                          fill="#fff"
+                          fontSize="11"
                         >
                           {address}
                         </text>
                         <text
-                          x={pos.x}
-                          y={pos.y - 30}
-                          textAnchor="middle"
-                          fill={qualityInfo.color}
-                          fontSize="10"
+                          x={pos.x - 70}
+                          y={pos.y - 35}
+                          fill={qualityInfo.textColor}
+                          fontSize="11"
+                          className="font-medium"
                         >
-                          {qualityInfo.status} -{' '}
-                          {Math.round((bestQuality / 255) * 100)}%
+                          Quality: {Math.round((bestQuality / 255) * 100)}% ({qualityInfo.status})
+                        </text>
+                        <text
+                          x={pos.x - 70}
+                          y={pos.y - 20}
+                          fill="#94A3B8"
+                          fontSize="11"
+                        >
+                          Click to view details
                         </text>
                       </motion.g>
                     )}
                   </AnimatePresence>
-                </motion.g>
+                </g>
               );
             })}
           </svg>
-        </motion.div>
 
-        {/* Legend */}
-        <motion.div
-          className="absolute top-2 right-2 bg-gray-800/90 backdrop-blur p-4 rounded-lg z-10"
-          whileHover={{ scale: 1.05 }}
-        >
-          <div className="space-y-2">
-            {[
-              { color: '#22C55E', label: 'Excellent (75-100%)' },
-              { color: '#EAB308', label: 'Good (50-75%)' },
-              { color: '#F97316', label: 'Fair (25-50%)' },
-              { color: '#EF4444', label: 'Poor (0-25%)' }
-            ].map(({ color, label }) => (
-              <div key={label} className="flex items-center gap-2">
-                <motion.div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: color }}
-                  animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
-                />
-                <span className="text-xs text-gray-300">{label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <svg width="30" height="10">
-                <line
-                  x1="0"
-                  y1="5"
-                  x2="30"
-                  y2="5"
-                  stroke="#3B82F6"
-                  strokeWidth="2"
-                />
-              </svg>
-              <span className="text-xs text-gray-300">Direct Link</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg width="30" height="10">
-                <line
-                  x1="0"
-                  y1="5"
-                  x2="30"
-                  y2="5"
-                  stroke="#8B5CF6"
-                  strokeWidth="2"
-                  strokeDasharray="6,4"
-                />
-              </svg>
-              <span className="text-xs text-gray-300">Hop Link</span>
+          <div className="absolute top-4 right-4 bg-[#1E293B]/90 backdrop-blur p-4 rounded-lg">
+            <div className="text-sm text-gray-300 font-medium mb-2">Link Quality</div>
+            <div className="space-y-2">
+              {[
+                { color: '#4ADE80', label: 'Excellent (75-100%)' },
+                { color: '#FBBF24', label: 'Good (50-75%)' },
+                { color: '#FB923C', label: 'Fair (25-50%)' },
+                { color: '#EF4444', label: 'Poor (0-25%)' }
+              ].map(({ color, label }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span className="text-xs text-gray-400">{label}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

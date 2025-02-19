@@ -98,7 +98,7 @@ const OperationsDetails: React.FC<OperationsDetailsProps> = ({
 
         <OperationMetric
           icon={Radio}
-          label="Link Status"
+          label="Low Noise Amplifier"
           value={amplifierStatus.text}
           status={amplifierStatus.status}
           highlight={isLnaActive}

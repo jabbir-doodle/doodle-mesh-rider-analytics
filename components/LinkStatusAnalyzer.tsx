@@ -20,6 +20,7 @@ import {
   Upload,
   Server,
   Radio,
+  Network,
 } from 'lucide-react';
 import { MetricCard } from './shared/MetricCard';
 import StationDetails from '../components/StationDetails';
@@ -27,7 +28,7 @@ import OperationsDetails from '../components/OperationsDetails';
 import { parseLogFile, MeshStat } from '../utils/logParser';
 import FileUpload from './LogFileUpload';
 import { StationStat } from '@/types';
-
+import MeshDetails from './MeshDetails';
 interface LinkStatusAnalyzerProps {
   initialData?: string;
 }
@@ -37,7 +38,7 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
   const [selectedStation, setSelectedStation] = useState<StationStat | null>(null);
   const [selectedMetric, setSelectedMetric] = useState<string>('noiseFloor');
   const [isLoading, setIsLoading] = useState(false);
-
+  const [selectedMeshNode, setSelectedMeshNode] = useState<MeshStat | null>(null);
   const handleFileLoaded = (content: string) => {
     try {
       setIsLoading(true);
@@ -52,12 +53,19 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
 
   const handleMetricClick = (metricType: string) => {
     setSelectedMetric(metricType);
-    document.getElementById('performance-graphs')?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'start',
-    });
   };
-
+  const getMeshNodeTimeSeriesData = (address: string) => {
+    return logData
+      .map((entry) => {
+        const meshData = entry.meshNodes?.find((n) => n.orig_address === address);
+        return meshData ? {
+          timestamp: entry.timestamp,
+          ...meshData,
+          quality: (meshData.tq / 255) * 100  // Normalize quality to percentage
+        } : null;
+      })
+      .filter((data) => data !== null);
+  };
   const getStationTimeSeriesData = (mac: string) => {
     return logData
       .map((entry) => {
@@ -140,12 +148,12 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
           </div>
           <p className="text-sm text-gray-400">Real-time monitoring of radio performance and system resources</p>
         </div>
-        <div className="grid grid-cols-5 gap-6 mb-8">
+        <div className="grid grid-cols-4 gap-6 mb-8">
           <MetricCard title="Noise Floor" value={Math.round(latestData.noise)} unit=" dBm" icon={Signal} status={latestData.noise > -75 ? 'warning' : 'normal'} onClick={() => handleMetricClick('noiseFloor')} />
           <MetricCard title="Channel Activity" value={latestData.activity} unit="%" icon={Activity} status={latestData.activity > 70 ? 'warning' : 'normal'} onClick={() => handleMetricClick('activity')} />
           <MetricCard title="CPU Load" value={latestData.cpuLoad} unit="%" icon={Cpu} status={latestData.cpuLoad > 80 ? 'warning' : 'normal'} onClick={() => handleMetricClick('cpu')} />
           <MetricCard title="Memory Available" value={latestData.memory} unit=" MB" icon={Database} status="normal" onClick={() => handleMetricClick('memory')} />
-          <MetricCard title="Inactive Time" value={latestData.inactive || 0} unit="ms" icon={Activity} status="normal" onClick={() => handleMetricClick('inactive')} />
+          {/* <MetricCard title="Inactive Time" value={latestData.inactive || 0} unit="ms" icon={Activity} status="normal" onClick={() => handleMetricClick('inactive')} /> */}
         </div>
 
         <div id="performance-graphs" className="grid grid-cols-2 gap-6 mb-8">
@@ -226,7 +234,7 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
               </div>
             </div>
           )}
-          {selectedMetric === 'inactive' && (
+          {/* {selectedMetric === 'inactive' && (
             <div className="bg-gray-900 p-6 rounded-lg col-span-2">
               <h3 className="text-lg font-semibold text-white mb-4">Inactive Time</h3>
               <div className="h-80">
@@ -241,26 +249,79 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
                 </ResponsiveContainer>
               </div>
             </div>
-          )}
+          )} */}
 
         </div>
+        {/* Network Visualization Section */}
         <div className="mb-8">
-          <MeshVisualization
-            meshStats={latestData.meshNodes.map(node => ({
-              ...node,
-              quality: (node.tq / 255) * 100,
-              status: node.hop_status === 'direct' || node.hop_status === 'hop' ? node.hop_status : 'direct',
-              lastSeen: node.last_seen_msecs,
-              hop_status: node.hop_status === 'direct' || node.hop_status === 'hop' ? node.hop_status : 'direct',
-            }))}
-            onNodeClick={(address: string) => {
-              const stationObj = latestData.stations.find((s: any) => s.mac === address);
-              if (stationObj) {
-                setSelectedStation(stationObj);
-              }
-            }}
-          />
+          <div className="bg-gray-900 p-6 rounded-lg">
+
+
+            {/* Interactive Help Overlay - shows on first visit */}
+            <div className="relative">
+
+
+              {/* Mesh Visualization */}
+              {latestData.meshNodes && (
+                <div className="relative group">
+                  <MeshVisualization
+                    meshStats={latestData.meshNodes.map(node => ({
+                      ...node,
+                      quality: (node.tq / 255) * 100,
+                      status: node.hop_status === 'direct' || node.hop_status === 'hop' ? node.hop_status : 'direct',
+                      lastSeen: node.last_seen_msecs,
+                      hop_status: node.hop_status === 'direct' || node.hop_status === 'hop' ? node.hop_status : 'direct',
+                    }))}
+                    onNodeClick={(address: string) => {
+                      // const stationObj = latestData.stations.find((s) => s.mac === address);
+                      // if (stationObj) {
+                      //   setSelectedStation(stationObj);
+                      //   setSelectedMeshNode(null);
+                      // } else {
+                      const meshNode = latestData.meshNodes.find((n) => n.orig_address === address);
+                      if (meshNode) {
+                        setSelectedMeshNode(meshNode);
+                        setSelectedStation(null);
+                      }
+                      //}
+                    }}
+                  />
+                  {/* Hover Instruction
+                  <div className="absolute inset-0 bg-black bg-opacity-50 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                    <div className="text-center">
+                      <div className="text-lg font-semibold">Interactive Network Map</div>
+                      <div className="text-sm text-gray-300">Click any node to view detailed statistics</div>
+                    </div>
+                  </div> */}
+                </div>
+              )}
+            </div>
+
+            {/* Quick Stats Summary */}
+            <div className="mt-4 grid grid-cols-3 gap-4">
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <div className="text-sm text-gray-400">Total Nodes</div>
+                <div className="text-xl font-semibold text-white">
+                  {latestData.meshNodes?.length || 0}
+                </div>
+              </div>
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <div className="text-sm text-gray-400">Direct Links</div>
+                <div className="text-xl font-semibold text-white">
+                  {latestData.meshNodes?.filter(n => n.hop_status === 'direct').length || 0}
+                </div>
+              </div>
+              <div className="bg-gray-800 p-4 rounded-lg">
+                <div className="text-sm text-gray-400">Hopped Links</div>
+                <div className="text-xl font-semibold text-white">
+                  {latestData.meshNodes?.filter(n => n.hop_status === 'hop').length || 0}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Rest of your component remains the same */}
         <div className="bg-gray-900 p-6 rounded-lg">
           <h3 className="text-lg font-semibold text-white mb-4">Direct Connections ({latestData.stations.length})</h3>
           <div className="space-y-4">
@@ -307,6 +368,14 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
             })}
           </div>
         </div>
+        {selectedMeshNode && (
+          <MeshDetails
+            node={latestData.meshNodes.find((n) => n.orig_address === selectedMeshNode.orig_address) || selectedMeshNode}
+            timeSeriesData={getMeshNodeTimeSeriesData(selectedMeshNode.orig_address)}
+            localtime={latestData.localtime}
+            onClose={() => setSelectedMeshNode(null)}
+          />
+        )}
         {selectedStation && (
           <StationDetails
             station={latestData.stations.find((s: any) => s.mac === selectedStation.mac) || selectedStation}
@@ -315,7 +384,9 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
             onClose={() => setSelectedStation(null)}
           />
         )}
+
       </div>
+
     </div>
   );
 }
