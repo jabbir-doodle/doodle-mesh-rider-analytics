@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Network, Signal } from 'lucide-react';
+import { formatMacAddress, macToIpAddress } from '@/utils/networkHelpers';
 
 export interface MeshStat {
   orig_address: string;
@@ -32,7 +33,65 @@ interface ConnectionBeamProps {
   quality: number;
   type: 'direct' | 'hop';
 }
+const CentralNode = () => (
+  <g className="cursor-pointer">
+    {/* Blue glowing ring effect */}
+    <circle
+      cx="400"
+      cy="300"
+      r="35"
+      fill="none"
+      stroke="#3B82F6"
+      strokeWidth="1"
+      className="opacity-30"
+    />
+    <circle
+      cx="400"
+      cy="300"
+      r="28"
+      fill="#1E293B"
+      stroke="#3B82F6"
+      strokeWidth="2"
+      filter="url(#glow)"
+    />
 
+    {/* Mesh Router Icon - Custom SVG */}
+    <g transform="translate(380, 280)">
+      <path
+        d="M20 10 A10 10 0 1 1 20 30 A10 10 0 1 1 20 10"
+        fill="#3B82F6"
+        className="opacity-80"
+      />
+      <path
+        d="M20 15 L20 25 M15 20 L25 20"
+        stroke="white"
+        strokeWidth="2"
+        strokeLinecap="round"
+      />
+    </g>
+
+    {/* Central Node Label */}
+    <text
+      x="400"
+      y="345"
+      textAnchor="middle"
+      fill="#E2E8F0"
+      fontSize="12"
+      className="font-medium tracking-wider"
+    >
+      MESH RIDER
+    </text>
+    <text
+      x="400"
+      y="360"
+      textAnchor="middle"
+      fill="#64748B"
+      fontSize="10"
+    >
+      ACTIVE
+    </text>
+  </g>
+);
 const ConnectionBeam: React.FC<ConnectionBeamProps> = ({ start, end, quality, type }) => {
   const pathD = `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
   const color = type === 'direct' ? '#4ADE80' : '#FBBF24';
@@ -42,17 +101,20 @@ const ConnectionBeam: React.FC<ConnectionBeamProps> = ({ start, end, quality, ty
       <path
         d={pathD}
         stroke={color}
-        strokeWidth="2"
+        strokeWidth={type === 'direct' ? "2" : "1.5"}
+        strokeDasharray={type === 'direct' ? 'none' : '4,4'}
         fill="none"
         className="opacity-60"
       />
-      <circle r="2" fill="white" opacity="0.8">
-        <animateMotion
-          dur="1.5s"
-          repeatCount="indefinite"
-          path={pathD}
-        />
-      </circle>
+      {type === 'direct' && (
+        <circle r="2" fill="white" opacity="0.8">
+          <animateMotion
+            dur="1.5s"
+            repeatCount="indefinite"
+            path={pathD}
+          />
+        </circle>
+      )}
     </g>
   );
 };
@@ -98,7 +160,7 @@ const MeshVisualization: React.FC<Props> = ({
           <div className="flex items-center gap-2">
             <Network className="h-5 w-5 text-blue-500" />
             <div>
-              <h2 className="text-lg font-semibold text-white">Network Topology</h2>
+              <h2 className="text-lg font-semibold text-white">Mesh Network Topology</h2>
               <p className="text-sm text-gray-400">Click on any node to view detailed network statistics</p>
             </div>
           </div>
@@ -141,7 +203,8 @@ const MeshVisualization: React.FC<Props> = ({
                 <stop offset="100%" stopColor="white" stopOpacity="0" />
               </radialGradient>
             </defs>
-
+            {/* Add CentralNode here */}
+            <CentralNode />
             {meshStats.map((stat, i) => {
               const sourcePos = getNodePosition(
                 uniqueNodes.indexOf(stat.orig_address),
@@ -172,7 +235,7 @@ const MeshVisualization: React.FC<Props> = ({
                   onMouseEnter={() => setHoveredNode(address)}
                   onMouseLeave={() => setHoveredNode(null)}
                   onClick={() => onNodeClick(address)}
-                  className="cursor-pointer transition-transform hover:scale-110"
+                  className="cursor-pointer"
                 >
                   {hoveredNode === address && (
                     <circle
@@ -193,57 +256,96 @@ const MeshVisualization: React.FC<Props> = ({
                     className="transition-all duration-300"
                   />
 
-                  <text
-                    x={pos.x}
-                    y={pos.y + 25}
-                    textAnchor="middle"
-                    fill="#94A3B8"
-                    fontSize="12"
-                    className="pointer-events-none"
-                  >
-                    {address.slice(-4)}
-                  </text>
+                  {/* IP Address and MAC Display */}
+                  <g className="pointer-events-none">
+                    <text
+                      x={pos.x}
+                      y={pos.y + 25}
+                      textAnchor="middle"
+                      fill="#E2E8F0"
+                      fontSize="12"
+                      className="font-medium"
+                    >
+                      {macToIpAddress(address)}
+                    </text>
+                    <text
+                      x={pos.x}
+                      y={pos.y + 40}
+                      textAnchor="middle"
+                      fill="#64748B"
+                      fontSize="10"
+                    >
+                      {formatMacAddress(address)}
+                    </text>
+                  </g>
 
+                  {/* Enhanced Hover Card */}
                   <AnimatePresence>
                     {hoveredNode === address && (
                       <motion.g
-                        initial={{ opacity: 0, scale: 0.8 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.8 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="pointer-events-none"
                       >
                         <rect
-                          x={pos.x - 80}
-                          y={pos.y - 80}
-                          width="160"
-                          height="70"
+                          x={pos.x - 85}
+                          y={pos.y - 85}
+                          width="170"
+                          height="80"
                           fill="#1E293B"
                           rx="8"
                           className="filter drop-shadow-lg"
                         />
+                        <rect
+                          x={pos.x - 85}
+                          y={pos.y - 85}
+                          width="170"
+                          height="24"
+                          fill="#2D3B4F"
+                          rx="8 8 0 0"
+                        />
                         <text
-                          x={pos.x - 70}
-                          y={pos.y - 55}
-                          fill="#fff"
-                          fontSize="11"
+                          x={pos.x - 75}
+                          y={pos.y - 68}
+                          fill="#94A3B8"
+                          fontSize="10"
                         >
-                          {address}
+                          Click to view details
                         </text>
                         <text
-                          x={pos.x - 70}
-                          y={pos.y - 35}
+                          x={pos.x - 75}
+                          y={pos.y - 45}
+                          fill="#FFFFFF"
+                          fontSize="12"
+                          className="font-medium"
+                        >
+                          {macToIpAddress(address)}
+                        </text>
+                        <text
+                          x={pos.x - 75}
+                          y={pos.y - 25}
+                          fill="#94A3B8"
+                          fontSize="11"
+                        >
+                          {formatMacAddress(address)}
+                        </text>
+                        <line
+                          x1={pos.x - 75}
+                          y1={pos.y - 15}
+                          x2={pos.x + 75}
+                          y2={pos.y - 15}
+                          stroke="#2D3B4F"
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={pos.x - 75}
+                          y={pos.y}
                           fill={qualityInfo.textColor}
                           fontSize="11"
                           className="font-medium"
                         >
-                          Quality: {Math.round((bestQuality / 255) * 100)}% ({qualityInfo.status})
-                        </text>
-                        <text
-                          x={pos.x - 70}
-                          y={pos.y - 20}
-                          fill="#94A3B8"
-                          fontSize="11"
-                        >
-                          Click to view details
+                          Quality: {Math.round((bestQuality / 255) * 100)}% • {qualityInfo.status}
                         </text>
                       </motion.g>
                     )}

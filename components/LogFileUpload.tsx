@@ -26,9 +26,26 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
   };
 
   const handleLogFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      let combinedContent = "";
+      let fileReadCount = 0;
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          combinedContent += (ev.target?.result as string).trim() + "\n";
+          fileReadCount++;
+          if (fileReadCount === files.length) {
+            combinedContent = combinedContent.trim();
+            onFileLoaded(combinedContent);
+          }
+        };
+        reader.readAsText(file);
+      }
+    }
   }, []);
+
 
   // Called when the user picks a .zip or .tar.gz file
   const handleArchiveFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -38,9 +55,7 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
     }
   }, []);
 
-  // Process the tar.gz data: ungzip + untar, then find .log
   const processTarGzData = async (data: Uint8Array) => {
-    // Dynamically import pako + js-untar so SSR never sees them
     let pakoModule, untarFn;
     try {
       pakoModule = await import("pako");
@@ -49,54 +64,50 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
       alert("Failed to load decompression library (pako).");
       return;
     }
-
     let decompressedData: Uint8Array;
     try {
-      // Decompress .gz
       decompressedData = pakoModule.ungzip(data);
     } catch (error) {
       console.error("Error decompressing gz data:", error);
       alert("Error decompressing the archive. Ensure it is a valid tar.gz file.");
       return;
     }
-
     if (!decompressedData || decompressedData.length === 0) {
       alert("Decompression failed: no data returned.");
       return;
     }
-
     try {
-      // Dynamically import the default export from js-untar
       const untarImport = await import("js-untar");
-      untarFn = untarImport.default; // default export
+      untarFn = untarImport.default;
     } catch (error) {
       console.error("Error importing js-untar:", error);
       alert("Failed to load tar extraction library (js-untar).");
       return;
     }
-
-    let files: TarFile[];
+    let files;
     try {
-      // Extract .tar
-      files = (await untarFn(decompressedData.buffer)) as TarFile[];
+      files = await untarFn(decompressedData.buffer);
     } catch (error) {
       console.error("Error extracting tar file:", error);
       alert("Error extracting the tar file from the archive.");
       return;
     }
-
-    // Look for .log in tmp/longtermlog
-    const logFile = files.find((f) => f.name.includes("tmp/longtermlog") && f.name.endsWith(".log"));
-    if (!logFile) {
-      alert("No .log file found in the extracted archive.");
+    const logFiles = files.filter((f: TarFile) => f.name.includes("tmp/longtermlog") && f.name.endsWith(".log"));
+    if (!logFiles || logFiles.length === 0) {
+      alert("No .log files found in the extracted archive.");
       return;
     }
+    logFiles.sort((a: TarFile, b: TarFile) => a.name.localeCompare(b.name));
 
-    // Decode log
     const decoder = new TextDecoder("utf-8");
-    const logContent = decoder.decode(logFile.buffer);
-    onFileLoaded(logContent);
+    let combinedLogContent = "";
+    for (const logFile of logFiles) {
+      combinedLogContent += decoder.decode(logFile.buffer).trim() + "\n";
+    }
+    combinedLogContent = combinedLogContent.trim();
+    onFileLoaded(combinedLogContent);
   };
+
 
   // Checks file extension and processes accordingly
   const handleArchiveFile = async (file: File) => {
@@ -160,6 +171,7 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
             id="fileInput"
             className="hidden"
             accept=".log,.json,.txt"
+            multiple
             onChange={handleLogFileSelect}
           />
           <Upload className="w-12 h-12 text-blue-500 mx-auto mb-4" />

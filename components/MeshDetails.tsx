@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { MetricCard } from './shared/MetricCard';
 import { MeshStat } from '@/types';
+import { formatMacAddress, macToIpAddress } from '@/utils/networkHelpers';
 
 interface MeshDetailsProps {
     node: MeshStat;
@@ -312,10 +313,25 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                     {/* Header */}
                     <div className="flex justify-between items-center mb-6">
                         <div>
-                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <Network className="h-6 w-6 text-blue-400" />
-                                Network Node: {node.orig_address}
-                            </h2>
+                            <div className="flex items-center gap-2">
+                                <div className="bg-blue-500/10 p-2 rounded-lg">
+                                    <Network className="h-6 w-6 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">
+                                        {macToIpAddress(node.orig_address)}
+                                    </h2>
+                                    <div className="flex items-center gap-2 mt-1">
+                                        <span className="text-sm text-gray-400 font-mono">
+                                            {formatMacAddress(node.orig_address)}
+                                        </span>
+                                        <span className="px-2 py-0.5 bg-gray-700 rounded-full text-xs text-gray-300">
+                                            {node.hop_status.toUpperCase()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="text-sm text-gray-400 mt-1">
                                 Last Updated: {formatTimestamp(localtime)}
                             </div>
@@ -487,7 +503,7 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                     </AnimatePresence>
                 </motion.div>
             </motion.div>
-        </AnimatePresence>
+        </AnimatePresence >
     );
 };
 

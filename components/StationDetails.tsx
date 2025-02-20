@@ -18,10 +18,12 @@ import {
   Signal,
   Cpu,
   Upload,
+  Network,
   Maximize2,
   Clock,
 } from 'lucide-react';
 import { MetricCard } from './shared/MetricCard';
+import { formatMacAddress, macToIpAddress } from '@/utils/networkHelpers';
 
 /* -----------------------------
    Types & Interfaces
@@ -418,13 +420,31 @@ const StationDetails: React.FC<StationDetailsProps> = ({
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex justify-between items-center">
               <div>
-                <h2 className="text-xl font-bold text-white">
-                  Station Details: {station.mac}
-                </h2>
-                <div className="flex items-center text-sm text-gray-400 gap-2 mt-2">
-                  <Clock size={16} />
-                  <span>Local Time: {formattedTime}</span>
+                <div>
+                  {/* IP Address with Network icon */}
+                  <div className="flex items-center gap-3">
+                    <div className="bg-blue-500/10 p-2 rounded-lg">
+                      <Network className="h-5 w-5 text-blue-400" />
+                    </div>
+                    <div>
+                      <div className="text-xl font-bold text-white">
+                        {macToIpAddress(station.mac)}
+                      </div>
+                      <div className="font-mono text-sm text-gray-300">
+                        {formatMacAddress(station.mac)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MAC Address with identifier icon */}
+
+
+                  <div className="flex items-center text-sm text-gray-400 gap-2 mt-2">
+                    <Clock size={16} />
+                    <span>Local Time: {formattedTime}</span>
+                  </div>
                 </div>
+
               </div>
               <div className="flex gap-3">
                 <motion.button

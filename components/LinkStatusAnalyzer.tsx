@@ -29,6 +29,7 @@ import { parseLogFile, MeshStat } from '../utils/logParser';
 import FileUpload from './LogFileUpload';
 import { StationStat } from '@/types';
 import MeshDetails from './MeshDetails';
+import { formatMacAddress, macToIpAddress } from '@/utils/networkHelpers';
 interface LinkStatusAnalyzerProps {
   initialData?: string;
 }
@@ -336,9 +337,21 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
                 >
                   <div className="flex justify-between items-start">
                     <div>
-                      <div className="text-white font-medium flex items-center">
-                        {station.mac}
-                        <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${signalQuality === 'good' ? 'bg-green-900 text-green-300' : signalQuality === 'fair' ? 'bg-yellow-900 text-yellow-300' : 'bg-red-900 text-red-300'}`}>{signalQuality.toUpperCase()}</span>
+                      <div className="text-white font-medium">
+                        {macToIpAddress(station.mac)}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-gray-400 font-mono">
+                          {formatMacAddress(station.mac)}
+                        </span>
+                        <span className={`px-2 py-0.5 text-xs rounded-full ${signalQuality === 'good'
+                          ? 'bg-green-900/50 text-green-300'
+                          : signalQuality === 'fair'
+                            ? 'bg-yellow-900/50 text-yellow-300'
+                            : 'bg-red-900/50 text-red-300'
+                          }`}>
+                          {signalQuality.toUpperCase()}
+                        </span>
                       </div>
                       <div className="text-sm text-gray-400 mt-1">
                         <span className="mr-4">RSSI: {station.rssi} dBm</span>
