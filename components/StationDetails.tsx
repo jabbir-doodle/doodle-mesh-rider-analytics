@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ComposedChart,
@@ -21,6 +21,9 @@ import {
   Network,
   Maximize2,
   Clock,
+  ZoomIn,
+  ZoomOut,
+  Minimize2,
 } from 'lucide-react';
 import { MetricCard } from './shared/MetricCard';
 import { formatMacAddress, macToIpAddress } from '@/utils/networkHelpers';
@@ -46,20 +49,25 @@ interface PacketLossChartProps extends ChartProps {
 /* -----------------------------
    Utility Functions
 ----------------------------- */
-const formatTimestamp = (value: number) =>
-  new Date(value).toLocaleString('en-US', {
-    month: 'short',
-    day: '2-digit',
+// Update the formatTimestamp function to be more consistent
+const formatTimestamp = (value: number) => {
+  // Ensure value is treated as milliseconds
+  const date = new Date(value * 1000);
+  return date.toLocaleString('en-US', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-    hour12: true,
+    hour12: true
   });
+};
 
 /* -----------------------------
    Chart Components
 ----------------------------- */
-const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, displayChoice }) => (
+const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({
+  data,
+  displayChoice
+}) => (
   <div className="h-64">
     <ResponsiveContainer width="100%" height="100%">
       <LineChart data={data}>
@@ -68,9 +76,7 @@ const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, dis
           dataKey="timestamp"
           type="number"
           domain={['auto', 'auto']}
-          tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString('en-US', { hour12: true })
-          }
+          tickFormatter={formatTimestamp}
           stroke="#9CA3AF"
         />
         <YAxis
@@ -79,7 +85,7 @@ const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, dis
           label={{ value: 'RSSI (dBm)', angle: -90, position: 'insideLeft' }}
         />
         <Tooltip
-          labelFormatter={(label) => formatTimestamp(Number(label))}
+          labelFormatter={formatTimestamp}
           contentStyle={{
             backgroundColor: '#1F2937',
             border: 'none',
@@ -101,7 +107,10 @@ const RssiChart: React.FC<ChartProps & { displayChoice: string }> = ({ data, dis
   </div>
 );
 
-const PacketLossChart: React.FC<PacketLossChartProps> = ({ data, displayChoice }) => (
+const PacketLossChart: React.FC<PacketLossChartProps> = ({
+  data,
+  displayChoice
+}) => (
   <div className="h-64">
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart data={data}>
@@ -110,9 +119,7 @@ const PacketLossChart: React.FC<PacketLossChartProps> = ({ data, displayChoice }
           dataKey="timestamp"
           type="number"
           domain={['auto', 'auto']}
-          tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString('en-US', { hour12: true })
-          }
+          tickFormatter={formatTimestamp}
           stroke="#9CA3AF"
         />
         <YAxis
@@ -139,7 +146,7 @@ const PacketLossChart: React.FC<PacketLossChartProps> = ({ data, displayChoice }
           }}
         />
         <Tooltip
-          labelFormatter={(label) => formatTimestamp(Number(label))}
+          labelFormatter={formatTimestamp}
           contentStyle={{
             backgroundColor: '#1F2937',
             border: 'none',
@@ -183,12 +190,7 @@ const McsChart: React.FC<ChartProps> = ({ data }) => (
           dataKey="timestamp"
           type="number"
           domain={['auto', 'auto']}
-          tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString('en-US', {
-              timeZone: 'America/New_York',
-              hour12: true,
-            })
-          }
+          tickFormatter={formatTimestamp}
           stroke="#9CA3AF"
         />
         <YAxis
@@ -198,12 +200,12 @@ const McsChart: React.FC<ChartProps> = ({ data }) => (
           ticks={[0, 3, 7, 11, 15]}
         />
         <Tooltip
-          labelFormatter={(label) => formatTimestamp(Number(label))}
+          labelFormatter={formatTimestamp}
           contentStyle={{
             backgroundColor: '#1F2937',
             border: 'none',
             borderRadius: '0.5rem',
-            color: '#F3F4F6',
+            color: '#F3F4F6'
           }}
         />
         <Line type="stepAfter" dataKey="mcs" stroke="#8B5CF6" name="MCS Index" dot={false} strokeWidth={2} />
@@ -221,12 +223,7 @@ const InactiveChart: React.FC<ChartProps> = ({ data }) => (
           dataKey="timestamp"
           type="number"
           domain={['auto', 'auto']}
-          tickFormatter={(value: number) =>
-            new Date(value * 1000).toLocaleTimeString('en-US', {
-              timeZone: 'America/New_York',
-              hour12: true,
-            })
-          }
+          tickFormatter={formatTimestamp}
           stroke="#9CA3AF"
         />
         <YAxis
@@ -235,12 +232,12 @@ const InactiveChart: React.FC<ChartProps> = ({ data }) => (
           label={{ value: 'Inactive Time (ms)', angle: -90, position: 'insideLeft' }}
         />
         <Tooltip
-          labelFormatter={(label) => formatTimestamp(Number(label))}
+          labelFormatter={formatTimestamp}
           contentStyle={{
             backgroundColor: '#1F2937',
             border: 'none',
             borderRadius: '0.5rem',
-            color: '#F3F4F6',
+            color: '#F3F4F6'
           }}
         />
         <Line type="monotone" dataKey="inactive" stroke="#EC4899" name="Inactive Time" dot={false} strokeWidth={2} />
@@ -265,6 +262,7 @@ const StationDetails: React.FC<StationDetailsProps> = ({
   const [showOverview, setShowOverview] = useState<boolean>(true);
   const [compareMode, setCompareMode] = useState<boolean>(false);
   const [selectedGraphs, setSelectedGraphs] = useState<string[]>([]);
+  const [isAllMetricsSelected, setIsAllMetricsSelected] = useState<boolean>(false);
 
   const formattedTime = new Date(localtime * 1000).toLocaleString('en-US', {
     hour12: true,
@@ -272,7 +270,6 @@ const StationDetails: React.FC<StationDetailsProps> = ({
     minute: '2-digit',
     second: '2-digit'
   });
-
 
   const handleOverviewChartClick = (metricType: string) => {
     setSelectedMetric(metricType);
@@ -283,7 +280,6 @@ const StationDetails: React.FC<StationDetailsProps> = ({
       setPlChoice('all');
     }
   };
-
 
   const getGraphTitle = (metric: string) => {
     switch (metric) {
@@ -300,103 +296,176 @@ const StationDetails: React.FC<StationDetailsProps> = ({
     }
   };
 
+  // Update the handleCompareSelect function with improved logic
   const handleCompareSelect = (metric: string) => {
-    if (selectedGraphs.includes(metric)) {
-      setSelectedGraphs(selectedGraphs.filter(g => g !== metric));
-    } else if (selectedGraphs.length < 2) {
-      setSelectedGraphs([...selectedGraphs, metric]);
+    if (metric === 'all') {
+      // If All Metrics is being selected
+      if (!isAllMetricsSelected) {
+        setIsAllMetricsSelected(true);
+        setSelectedGraphs(['rssi', 'packetLoss', 'mcs', 'inactive']);
+      } else {
+        // If All Metrics is being deselected
+        setIsAllMetricsSelected(false);
+        setSelectedGraphs([]);
+      }
+    } else {
+      // If individual metric is clicked while All Metrics is active
+      if (isAllMetricsSelected) {
+        setIsAllMetricsSelected(false);
+        setSelectedGraphs([metric]);
+      } else {
+        // Normal individual metric toggle
+        if (selectedGraphs.includes(metric)) {
+          setSelectedGraphs(selectedGraphs.filter(g => g !== metric));
+        } else if (selectedGraphs.length < 4) {
+          setSelectedGraphs([...selectedGraphs, metric]);
+        }
+      }
     }
   };
 
-  const ComparisonChart = () => {
-    return (
-      <div className="h-96">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis
-              dataKey="timestamp"
-              type="number"
-              scale="time"
-              domain={['auto', 'auto']}
-              tickFormatter={(value: number) =>
-                new Date(value * 1000).toLocaleTimeString('en-US', { hour12: true })
-              }
-              stroke="#9CA3AF"
-            />
-            {selectedGraphs.includes('rssi') && (
-              <YAxis
-                yAxisId="rssi"
-                orientation="left"
-                domain={[-90, -20]}
-                stroke="#3B82F6"
-                label={{ value: 'RSSI (dBm)', angle: -90, position: 'insideLeft', style: { fill: '#3B82F6' } }}
-              />
-            )}
-            {selectedGraphs.includes('packetLoss') && (
-              <YAxis
-                yAxisId="pl"
-                orientation="right"
-                domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax * 1.1))]}
-                stroke="#EF4444"
-                label={{ value: 'Packet Loss Ratio', angle: -90, position: 'insideRight', style: { fill: '#EF4444' } }}
-              />
-            )}
-            {selectedGraphs.includes('mcs') && (
-              <YAxis
-                yAxisId="mcs"
-                orientation="right"
-                domain={[0, 15]}
-                stroke="#8B5CF6"
-                label={{ value: 'MCS Index', angle: -90, position: 'insideRight', style: { fill: '#8B5CF6' } }}
-              />
-            )}
-            <Tooltip
-              labelFormatter={(label) => new Date(Number(label) * 1000).toLocaleTimeString('en-US', { hour12: true })}
-              contentStyle={{
-                backgroundColor: '#1F2937',
-                border: 'none',
-                borderRadius: '0.5rem',
-                color: '#F3F4F6',
-              }}
-            />
-            <Legend />
-            {selectedGraphs.includes('rssi') && (
-              <Line
-                yAxisId="rssi"
-                type="monotone"
-                dataKey="rssi"
-                stroke="#3B82F6"
-                name="RSSI"
-                dot={false}
-              />
-            )}
-            {selectedGraphs.includes('packetLoss') && (
-              <Bar
-                yAxisId="pl"
-                dataKey="pl_ratio"
-                fill="#EF4444"
-                name="Packet Loss"
-                opacity={0.8}
-              />
-            )}
-            {selectedGraphs.includes('mcs') && (
-              <Line
-                yAxisId="mcs"
-                type="stepAfter"
-                dataKey="mcs"
-                stroke="#8B5CF6"
-                name="MCS Index"
-                dot={false}
-              />
-            )}
-          </ComposedChart>
-        </ResponsiveContainer>
+  const ChartContainer: React.FC<{ title: string; children: React.ReactNode }> = ({
+    title,
+    children
+  }) => (
+    <div className="bg-gray-800 p-4 rounded-lg">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-semibold text-white">{title}</h3>
       </div>
-    );
-  };
+      <div className="h-80">
+        {children}
+      </div>
+    </div>
+  );
 
-  const renderChart = () => {
+  const ComparisonChart = () => (
+    <ChartContainer title="Combined Metrics">
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+          <XAxis
+            dataKey="timestamp"
+            type="number"
+            scale="time"
+            domain={['auto', 'auto']}
+            tickFormatter={formatTimestamp}
+            stroke="#9CA3AF"
+          />
+          {/* Add all possible Y-axes */}
+          {selectedGraphs.includes('rssi') && (
+            <YAxis
+              yAxisId="rssi"
+              orientation="left"
+              domain={[-90, -20]}
+              stroke="#3B82F6"
+              label={{ value: 'RSSI (dBm)', angle: -90, position: 'insideLeft', style: { fill: '#3B82F6' } }}
+            />
+          )}
+          {selectedGraphs.includes('packetLoss') && (
+            <YAxis
+              yAxisId="pl"
+              orientation="right"
+              domain={[0, (dataMax: number) => Math.max(1, Math.ceil(dataMax * 1.1))]}
+              stroke="#EF4444"
+              label={{ value: 'Packet Loss Ratio', angle: -90, position: 'insideRight', style: { fill: '#EF4444' } }}
+            />
+          )}
+          {selectedGraphs.includes('mcs') && (
+            <YAxis
+              yAxisId="mcs"
+              orientation="right"
+              domain={[0, 15]}
+              stroke="#8B5CF6"
+              label={{ value: 'MCS Index', angle: -90, position: 'insideRight', style: { fill: '#8B5CF6' } }}
+            />
+          )}
+          {selectedGraphs.includes('inactive') && (
+            <YAxis
+              yAxisId="inactive"
+              orientation="right"
+              domain={[0, 'auto']}
+              stroke="#EC4899"
+              label={{ value: 'Inactive (ms)', angle: -90, position: 'insideRight', style: { fill: '#EC4899' } }}
+            />
+          )}
+          <Tooltip
+            labelFormatter={formatTimestamp}
+            contentStyle={{
+              backgroundColor: '#1F2937',
+              border: 'none',
+              borderRadius: '0.5rem',
+              color: '#F3F4F6',
+            }}
+          />
+          <Legend />
+          {/* Add all possible metrics */}
+          {selectedGraphs.includes('rssi') && (
+            <Line
+              yAxisId="rssi"
+              type="monotone"
+              dataKey="rssi"
+              stroke="#3B82F6"
+              name="RSSI"
+              dot={false}
+            />
+          )}
+          {selectedGraphs.includes('packetLoss') && (
+            <Bar
+              yAxisId="pl"
+              dataKey="pl_ratio"
+              fill="#EF4444"
+              name="Packet Loss"
+              opacity={0.8}
+            />
+          )}
+          {selectedGraphs.includes('mcs') && (
+            <Line
+              yAxisId="mcs"
+              type="stepAfter"
+              dataKey="mcs"
+              stroke="#8B5CF6"
+              name="MCS Index"
+              dot={false}
+            />
+          )}
+          {selectedGraphs.includes('inactive') && (
+            <Line
+              yAxisId="inactive"
+              type="monotone"
+              dataKey="inactive"
+              stroke="#EC4899"
+              name="Inactive Time"
+              dot={false}
+            />
+          )}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </ChartContainer>
+  );
+
+  useEffect(() => {
+    if (compareMode) {
+      setIsAllMetricsSelected(true);
+      setSelectedGraphs(['rssi', 'packetLoss', 'mcs', 'inactive']);
+    }
+  }, [compareMode]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.ctrlKey) {
+        switch (e.key) {
+          case 'f':
+            setIsFullView(prev => !prev);
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  function renderChart(): React.ReactNode {
     switch (selectedMetric) {
       case 'rssi':
         return <RssiChart data={timeSeriesData} displayChoice={rssiChoice} />;
@@ -409,8 +478,7 @@ const StationDetails: React.FC<StationDetailsProps> = ({
       default:
         return null;
     }
-  };
-
+  }
 
   return (
     <AnimatePresence>
@@ -420,31 +488,23 @@ const StationDetails: React.FC<StationDetailsProps> = ({
           <div className="flex flex-col gap-4 mb-6">
             <div className="flex justify-between items-center">
               <div>
-                <div>
-                  {/* IP Address with Network icon */}
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500/10 p-2 rounded-lg">
-                      <Network className="h-5 w-5 text-blue-400" />
-                    </div>
-                    <div>
-                      <div className="text-xl font-bold text-white">
-                        {macToIpAddress(station.mac)}
-                      </div>
-                      <div className="font-mono text-sm text-gray-300">
-                        {formatMacAddress(station.mac)}
-                      </div>
-                    </div>
+                {/* Network icon */}
+                <div className="flex items-center gap-3">
+                  <div className="bg-blue-500/10 p-2 rounded-lg">
+                    <Network className="h-5 w-5 text-blue-400" />
                   </div>
-
-                  {/* MAC Address with identifier icon */}
-
-
-                  <div className="flex items-center text-sm text-gray-400 gap-2 mt-2">
-                    <Clock size={16} />
-                    <span>Local Time: {formattedTime}</span>
+                  <div className="text-xl font-bold text-white">
+                    {macToIpAddress(station.mac)}
+                    <div className="font-mono text-sm text-gray-300">
+                      {formatMacAddress(station.mac)}
+                    </div>
                   </div>
                 </div>
-
+                {/* MAC Address with identifier icon */}
+                <div className="flex items-center text-sm text-gray-400 gap-2 mt-2">
+                  <Clock size={16} />
+                  <span>Local Time: {formattedTime}</span>
+                </div>
               </div>
               <div className="flex gap-3">
                 <motion.button
@@ -477,7 +537,7 @@ const StationDetails: React.FC<StationDetailsProps> = ({
                   onClick={onClose}
                   className="text-gray-400 hover:text-white p-2"
                 >
-                  ×
+                  <Minimize2 />
                 </motion.button>
               </div>
             </div>
@@ -566,7 +626,7 @@ const StationDetails: React.FC<StationDetailsProps> = ({
             </motion.div>
           </div>
 
-
+          {/* Comparison Chart Section */}
           {compareMode && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -576,27 +636,34 @@ const StationDetails: React.FC<StationDetailsProps> = ({
               <div className="bg-gray-800 p-4 rounded-lg">
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="text-lg font-semibold text-white">Compare Metrics</h3>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setCompareMode(false)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    ×
-                  </motion.button>
                 </div>
+
+                <div className="text-gray-400 text-sm mb-4">
+                  Select metrics to compare (max 4) or click "All Metrics"
+                </div>
+
                 <div className="flex flex-wrap gap-3 mb-4">
+                  <button
+                    onClick={() => handleCompareSelect('all')}
+                    className={`px-4 py-2 rounded-lg transition-colors duration-200 ${isAllMetricsSelected
+                      ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                      }`}
+                  >
+                    All Metrics
+                  </button>
+
                   {['rssi', 'packetLoss', 'mcs', 'inactive'].map(metric => (
                     <button
                       key={metric}
                       onClick={() => handleCompareSelect(metric)}
-                      className={`px-4 py-2 rounded-lg transition-colors ${selectedGraphs.includes(metric)
-                        ? 'bg-blue-600 text-white'
-                        : selectedGraphs.length >= 2
+                      className={`px-4 py-2 rounded-lg transition-colors duration-200 ${selectedGraphs.includes(metric)
+                        ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                        : selectedGraphs.length >= 4 && !selectedGraphs.includes(metric)
                           ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                          : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
                         }`}
-                      disabled={selectedGraphs.length >= 2 && !selectedGraphs.includes(metric)}
+                      disabled={isAllMetricsSelected || (selectedGraphs.length >= 4 && !selectedGraphs.includes(metric))}
                     >
                       {metric === 'rssi' ? 'RSSI' :
                         metric === 'packetLoss' ? 'Packet Loss' :
@@ -604,14 +671,10 @@ const StationDetails: React.FC<StationDetailsProps> = ({
                     </button>
                   ))}
                 </div>
+
                 {selectedGraphs.length > 0 && (
                   <div className="mt-4">
                     <ComparisonChart />
-                  </div>
-                )}
-                {selectedGraphs.length === 0 && (
-                  <div className="text-gray-400 text-sm mt-2">
-                    Select metrics to compare (max 2)
                   </div>
                 )}
               </div>
@@ -656,97 +719,11 @@ const StationDetails: React.FC<StationDetailsProps> = ({
             </div>
           )}
 
-          {/* Selected Metric Chart */}
+          {/* Individual Metric Chart */}
           {selectedMetric && !compareMode && (
-            <motion.div
-              layout
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-gray-800 p-4 rounded-lg mb-4"
-            >
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-white">{getGraphTitle(selectedMetric)}</h3>
-                <div className="flex items-center space-x-2">
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setIsFullView(true)}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    <Maximize2 size={20} />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedMetric('')}
-                    className="text-gray-400 hover:text-white"
-                  >
-                    ×
-                  </motion.button>
-                </div>
-              </div>
-
-              {selectedMetric === 'rssi' && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <button
-                    onClick={() => setRssiChoice('all')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    Overall & Antennas
-                  </button>
-                  <button
-                    onClick={() => setRssiChoice('rssi')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'rssi' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    Overall
-                  </button>
-                  <button
-                    onClick={() => setRssiChoice('ant1')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'ant1' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    Antenna 1
-                  </button>
-                  <button
-                    onClick={() => setRssiChoice('ant2')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${rssiChoice === 'ant2' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    Antenna 2
-                  </button>
-                </div>
-              )}
-
-              {selectedMetric === 'packetLoss' && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <button
-                    onClick={() => setPlChoice('all')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${plChoice === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    All
-                  </button>
-                  <button
-                    onClick={() => setPlChoice('pl')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${plChoice === 'pl' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    Packet Loss
-                  </button>
-                  <button
-                    onClick={() => setPlChoice('retries')}
-                    className={`px-3 py-1.5 rounded-lg transition-colors ${plChoice === 'retries' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-                      }`}
-                  >
-                    Retries
-                  </button>
-                </div>
-              )}
-
+            <ChartContainer title={getGraphTitle(selectedMetric)}>
               {renderChart()}
-            </motion.div>
+            </ChartContainer>
           )}
         </motion.div>
 
@@ -773,7 +750,7 @@ const StationDetails: React.FC<StationDetailsProps> = ({
                     onClick={() => setIsFullView(false)}
                     className="text-gray-400 hover:text-white"
                   >
-                    ×
+                    <Minimize2 />
                   </motion.button>
                 </div>
                 {renderChart()}

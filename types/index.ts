@@ -61,3 +61,93 @@ export interface ChartData {
   cpuLoad15m: number;
   memory: number;
 }
+
+export interface RadioModel {
+  name: string;
+  power: number[];
+  sensitivity: number[];
+  maxTxPower: number;
+  frequencies: number[];
+}
+
+export interface RadioModels {
+  [key: string]: RadioModel;
+}
+
+export interface RangeEstimation {
+  mcs: number;
+  range: number;
+  throughput: number;
+  modulation: string;
+  codingRate: number;
+  status: string;
+  fresnelStatus: string;
+}
+
+export interface ChartDataPoint {
+  distance: number;
+  throughput: number;
+  fresnelClearance: number;
+  modulation: string;
+  codingRate: number;
+  mcs: number;
+}
+
+export interface CalculationConstants {
+  udp: number;
+  ipv4: number;
+  eth2: number;
+  batAdv: number;
+  llc: number;
+  ieee80211: number;
+  phy: number;
+  aifs: number;
+  cwSize: number;
+  baSize: number;
+  phyHeader11n: number;
+  ltf: number;
+  sifs: number;
+  mpduDelimiter: number;
+  txop: number;
+  psr: number;
+  fresnelClearancePercent: number;
+  basicRate: number;
+}
+
+export interface RFParameters {
+  power: number[];
+  sensitivity: number[];
+  modulation: string[];
+  codingRate: number[];
+  bitsPerSymbol: number[];
+}
+
+export interface CalculationResults {
+  chartData: ChartDataPoint[];
+  rangeEstFinal: number;
+  finalMcsRate: number;
+  finalAGL: number;
+  rangeEstMax: number;
+  maxMcsRate: number;
+  maxAGL: number;
+  totalThroughput: number;
+  rangeEstList: RangeEstimation[];
+  model: string;
+}
+
+export interface RangeCalculatorProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export interface DialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface DialogContentProps {
+  children: React.ReactNode;
+  className?: string;
+}

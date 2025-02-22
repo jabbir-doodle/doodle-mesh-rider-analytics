@@ -255,6 +255,9 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
     const [selectedMetric, setSelectedMetric] = useState<string>('');
     const [isFullView, setIsFullView] = useState<boolean>(false);
     const [showOverview, setShowOverview] = useState<boolean>(true);
+    const [compareMode, setCompareMode] = useState<boolean>(false);
+    const [selectedGraphs, setSelectedGraphs] = useState<string[]>(['pathQuality', 'stability', 'distribution']);
+    const [isAllMetricsSelected, setIsAllMetricsSelected] = useState<boolean>(true);
 
     // Calculate network health metrics
     const normalizedQuality = (node.tq / 255) * 100;
@@ -294,6 +297,131 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
             default:
                 return null;
         }
+    };
+
+    const CombinedMetricsChart = () => (
+        <div className="bg-gray-800 p-4 rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-white">Combined Metrics</h3>
+            </div>
+            <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={timeSeriesData} margin={{ top: 10, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis
+                            dataKey="timestamp"
+                            type="number"
+                            domain={['auto', 'auto']}
+                            tickFormatter={formatTimestamp}
+                            stroke="#9CA3AF"
+                        />
+                        <YAxis
+                            yAxisId="quality"
+                            orientation="left"
+                            domain={[0, 100]}
+                            stroke="#10B981"
+                            label={{ value: 'Quality (%)', angle: -90, position: 'insideLeft' }}
+                        />
+                        <YAxis
+                            yAxisId="latency"
+                            orientation="right"
+                            domain={[0, 'auto']}
+                            stroke="#60A5FA"
+                            label={{ value: 'Response (ms)', angle: 90, position: 'insideRight' }}
+                        />
+                        <Tooltip
+                            labelFormatter={formatTimestamp}
+                            contentStyle={{
+                                backgroundColor: '#1F2937',
+                                border: 'none',
+                                borderRadius: '0.5rem',
+                                color: '#F3F4F6'
+                            }}
+                        />
+                        <Legend />
+                        {selectedGraphs.includes('pathQuality') && (
+                            <>
+                                <Line
+                                    yAxisId="quality"
+                                    type="monotone"
+                                    dataKey="directQuality"
+                                    name="Direct Path"
+                                    stroke="#10B981"
+                                    dot={false}
+                                />
+                                <Line
+                                    yAxisId="quality"
+                                    type="monotone"
+                                    dataKey="hoppedQuality"
+                                    name="Hopped Path"
+                                    stroke="#EC4899"
+                                    dot={false}
+                                />
+                            </>
+                        )}
+                        {selectedGraphs.includes('stability') && (
+                            <Bar
+                                yAxisId="latency"
+                                dataKey="last_seen_msecs"
+                                name="Response Time"
+                                fill="#60A5FA"
+                                opacity={0.5}
+                            />
+                        )}
+                        {selectedGraphs.includes('distribution') && (
+                            <Line
+                                yAxisId="quality"
+                                type="monotone"
+                                dataKey={(entry) => (entry.tq / 255) * 100}
+                                name="Path Distribution"
+                                stroke="#F59E0B"
+                                dot={false}
+                            />
+                        )}
+                    </ComposedChart>
+                </ResponsiveContainer>
+            </div>
+        </div>
+    );
+
+    const handleCompareSelect = (metric: string) => {
+        if (metric === 'all') {
+            setIsAllMetricsSelected(prev => {
+                const newState = !prev;
+                setSelectedGraphs(newState ? ['pathQuality', 'stability', 'distribution'] : []);
+                return newState;
+            });
+            return;
+        }
+
+        setIsAllMetricsSelected(false);
+        setSelectedGraphs(prev => {
+            if (prev.includes(metric)) {
+                return prev.filter(m => m !== metric);
+            }
+            if (prev.length >= 3) {
+                return prev;
+            }
+            return [...prev, metric];
+        });
+    };
+
+    const toggleCompareMode = () => {
+        setCompareMode(prev => {
+            if (!prev) {
+                // Entering compare mode
+                setShowOverview(false);
+                setSelectedMetric('');
+                setSelectedGraphs(['pathQuality', 'stability', 'distribution']);
+                setIsAllMetricsSelected(true);
+            } else {
+                // Exiting compare mode
+                setShowOverview(true);
+                setSelectedGraphs([]);
+                setIsAllMetricsSelected(true);
+            }
+            return !prev;
+        });
     };
 
     return (
@@ -401,8 +529,79 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                         />
                     </div>
 
+                    {/* Compare Metrics Section */}
+                    <div className="mb-6">
+                        <div className="flex justify-end">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={toggleCompareMode}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2"
+                            >
+                                <Activity className="h-4 w-4" />
+                                {compareMode ? 'Hide Comparison' : 'Compare Metrics'}
+                            </motion.button>
+                        </div>
+
+                        {compareMode && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="mt-4"
+                            >
+                                <div className="bg-gray-800 p-4 rounded-lg">
+                                    <div className="flex justify-between items-center mb-4">
+                                        <h3 className="text-lg font-semibold text-white">Compare Metrics</h3>
+                                    </div>
+
+                                    <div className="text-gray-400 text-sm mb-4">
+                                        Select metrics to compare or click "All Metrics"
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-3 mb-4">
+                                        <motion.button
+                                            whileHover={{ scale: 1.05 }}
+                                            whileTap={{ scale: 0.95 }}
+                                            onClick={() => handleCompareSelect('all')}
+                                            className={`px-4 py-2 rounded-lg transition-colors duration-200 ${isAllMetricsSelected
+                                                ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                                }`}
+                                        >
+                                            All Metrics
+                                        </motion.button>
+
+                                        {[
+                                            { id: 'pathQuality', label: 'Path Quality' },
+                                            { id: 'stability', label: 'Network Stability' },
+                                            { id: 'distribution', label: 'Path Distribution' }
+                                        ].map(({ id, label }) => (
+                                            <motion.button
+                                                key={id}
+                                                whileHover={{ scale: 1.05 }}
+                                                whileTap={{ scale: 0.95 }}
+                                                onClick={() => handleCompareSelect(id)}
+                                                className={`px-4 py-2 rounded-lg transition-colors duration-200 ${selectedGraphs.includes(id)
+                                                    ? 'bg-blue-600 text-white ring-2 ring-blue-400'
+                                                    : isAllMetricsSelected
+                                                        ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                                                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+                                                    }`}
+                                                disabled={isAllMetricsSelected}
+                                            >
+                                                {label}
+                                            </motion.button>
+                                        ))}
+                                    </div>
+
+                                    {selectedGraphs.length > 0 && <CombinedMetricsChart />}
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
+
                     {/* Overview */}
-                    {showOverview && !selectedMetric && (
+                    {showOverview && !selectedMetric && !compareMode && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <motion.div
                                 whileHover={{ scale: 1.02 }}
@@ -428,7 +627,7 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                     )}
 
                     {/* Selected Metric View */}
-                    {selectedMetric && (
+                    {selectedMetric && !compareMode && (
                         <motion.div
                             layout
                             initial={{ opacity: 0, y: 20 }}
