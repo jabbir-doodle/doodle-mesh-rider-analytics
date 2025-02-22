@@ -5,6 +5,9 @@ const nextConfig = {
     config.resolve.fallback = { fs: false };
     return config;
   },
+  images: {
+    domains: ['localhost'],
+  },
 };
 
 module.exports = nextConfig;

@@ -555,7 +555,7 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                                     </div>
 
                                     <div className="text-gray-400 text-sm mb-4">
-                                        Select metrics to compare or click "All Metrics"
+                                        {`Select metrics to compare or click "All Metrics"`}
                                     </div>
 
                                     <div className="flex flex-wrap gap-3 mb-4">

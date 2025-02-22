@@ -1,8 +1,9 @@
-"use client";  // <-- Add this at the very top
+"use client";
 
-import React, { useCallback } from "react";
+import React, { useCallback, useState } from "react";
 import { Upload, FileSearch } from "lucide-react";
 import JSZip from "jszip";
+import Image from 'next/image';
 
 // If you have type definitions for your .tar files, define them here
 interface TarFile {
@@ -15,6 +16,8 @@ interface Props {
 }
 
 const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
+  const [isDragging, setIsDragging] = useState(false);
+
   // Basic .log file handler
   const handleFile = (file: File) => {
     const reader = new FileReader();
@@ -44,8 +47,7 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
         reader.readAsText(file);
       }
     }
-  }, []);
-
+  }, [onFileLoaded]);
 
   // Called when the user picks a .zip or .tar.gz file
   const handleArchiveFileSelect = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -108,7 +110,6 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
     onFileLoaded(combinedLogContent);
   };
 
-
   // Checks file extension and processes accordingly
   const handleArchiveFile = async (file: File) => {
     if (file.name.endsWith(".zip")) {
@@ -130,6 +131,50 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
       alert("Unsupported file type. Please upload a .zip or .tar.gz file.");
     }
   };
+
+  // Add drag and drop handlers
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      const logFiles = files.filter(file =>
+        file.name.endsWith('.log') ||
+        file.name.endsWith('.json') ||
+        file.name.endsWith('.txt')
+      );
+
+      if (logFiles.length > 0) {
+        let combinedContent = "";
+        let fileReadCount = 0;
+
+        logFiles.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (ev) => {
+            combinedContent += (ev.target?.result as string).trim() + "\n";
+            fileReadCount++;
+
+            if (fileReadCount === logFiles.length) {
+              combinedContent = combinedContent.trim();
+              onFileLoaded(combinedContent);
+            }
+          };
+          reader.readAsText(file);
+        });
+      }
+    }
+  }, [onFileLoaded]);
 
   // UI instructions
   const logInstructions = [
@@ -157,14 +202,24 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
   return (
     <div className="max-w-4xl mx-auto bg-gray-900 rounded-lg shadow-xl">
       <div className="p-6 border-b border-gray-800">
-        <img src="/logo.png" alt="Mesh Rider Logo" className="h-12 mx-auto" />
+        <Image
+          src="/logo.png"
+          alt="Mesh Rider Logo"
+          width={48}
+          height={48}
+          className="h-12 mx-auto"
+        />
       </div>
 
       {/* Log file upload */}
       <div className="p-6">
         <div
-          className="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
+          className={`border-2 border-dashed ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700'
+            } rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors`}
           onClick={() => document.getElementById("fileInput")?.click()}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
         >
           <input
             type="file"
