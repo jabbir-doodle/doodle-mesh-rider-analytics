@@ -202,13 +202,7 @@ const LogFileUpload: React.FC<Props> = ({ onFileLoaded }) => {
   return (
     <div className="max-w-4xl mx-auto bg-gray-900 rounded-lg shadow-xl">
       <div className="p-6 border-b border-gray-800">
-        <Image
-          src="/logo.png"
-          alt="Mesh Rider Logo"
-          width={48}
-          height={48}
-          className="h-12 mx-auto"
-        />
+        <img src="/logo.png" alt="Mesh Rider Logo" className="h-12 mx-auto" />
       </div>
 
       {/* Log file upload */}
