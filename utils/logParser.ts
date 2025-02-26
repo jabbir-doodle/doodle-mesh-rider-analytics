@@ -9,7 +9,7 @@ export function parseLogFile(content: string): LinkStateData[] {
       localtime: data.sysinfo.localtime,
       timestamp: data.sysinfo.localtime * 1000,
       noise: Math.round(parseFloat(data.noise)),
-      activity: Math.round(data.activity),
+      activity: typeof data.activity === 'number' ? Math.round(data.activity) : 0,
       cpuLoad: Math.round((data.sysinfo.cpu_load[0] / 65535) * 100),
       cpuLoad5m: Math.round((data.sysinfo.cpu_load[1] / 65535) * 100),
       cpuLoad15m: Math.round((data.sysinfo.cpu_load[2] / 65535) * 100),

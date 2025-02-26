@@ -468,7 +468,7 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
                           <span className="text-white">{(station.tx_bytes / 1024).toFixed(2)} KB</span>
                         </div>
                         <div className={`text-sm ${plQuality === 'good' ? 'text-green-400' : plQuality === 'fair' ? 'text-yellow-400' : 'text-red-400'}`}>
-                          PL: {station.pl_ratio.toFixed(2)}
+                          PL: {station.pl_ratio !== undefined ? station.pl_ratio.toFixed(2) : 'N/A'}
                         </div>
                         <div className="text-sm text-gray-400">Retries: {station.tx_retries}</div>
                       </div>
