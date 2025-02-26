@@ -96,7 +96,7 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
     );
   }
 
-  const latestData = logData[logData.length - 1];
+  const latestData = logData.find((entry) => entry.stations && entry.stations.length > 0) || logData[logData.length - 1];
   // A helper for formatting timestamps to a readable date/time
   const formatTimestamp = (value: number) =>
     new Date(value).toLocaleString('en-US', {
