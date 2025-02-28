@@ -45,6 +45,7 @@ const MeshToolbox: FC = () => {
         setAnimateCards(true);
     }, []);
 
+    // Updated the "app" color from #F43F5E to #06B6D4, and iconBg from #FFE4E6 to #CFFAFE
     const tools: Tool[] = [
         {
             id: "logviewer",
@@ -75,8 +76,8 @@ const MeshToolbox: FC = () => {
             title: "Mesh Rider App",
             description: "Control and monitor your network on the go.",
             icon: "📱",
-            color: "#F43F5E",
-            iconBg: "#FFE4E6",
+            color: "#06B6D4",    // Changed from #F43F5E
+            iconBg: "#CFFAFE",  // Changed from #FFE4E6
         },
     ];
 
@@ -112,8 +113,8 @@ const MeshToolbox: FC = () => {
             case 'app':
                 return (
                     <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
-                        <rect x="5" y="2" width="14" height="20" rx="3" stroke="#F43F5E" strokeWidth="2" />
-                        <path d="M12 18H12.01" stroke="#F43F5E" strokeWidth="2" strokeLinecap="round" />
+                        <rect x="5" y="2" width="14" height="20" rx="3" stroke="#06B6D4" strokeWidth="2" />
+                        <path d="M12 18H12.01" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                 );
             default:
@@ -201,7 +202,7 @@ const MeshToolbox: FC = () => {
         );
     }
 
-    // Landing Page: Hero section now shows the logo and "Mesh Rider Toolbox"
+    // Landing Page: Hero section, now with narrower margins (max-w-7xl) and smaller padding (p-4)
     return (
         <div className={`relative min-h-screen overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
             {isDarkMode ? (
@@ -215,13 +216,14 @@ const MeshToolbox: FC = () => {
                 </div>
             )}
 
-            <div className="relative z-20 max-w-6xl mx-auto p-8">
+            {/* Container updated to max-w-7xl and p-4 for narrower side margins */}
+            <div className="relative z-20 max-w-7xl mx-auto p-4">
                 {/* Sticky Header */}
-                <ThemeToggle />
 
+                <ThemeToggle />
                 {/* Hero Section: Logo + "Mesh Rider Toolbox" */}
                 <motion.section
-                    className="text-center mb-16"
+                    className="text-center mb-10"
                     variants={heroVariants}
                     initial="hidden"
                     animate="visible"
@@ -237,7 +239,7 @@ const MeshToolbox: FC = () => {
                 </motion.section>
 
                 {/* Tools Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                     {tools.map((tool, index) => (
                         <motion.div
                             key={tool.id}
@@ -299,7 +301,7 @@ const MeshToolbox: FC = () => {
                 </div>
 
                 {/* Recent Updates Section */}
-                <div className="mt-12 p-6 rounded-xl border bg-opacity-30 backdrop-blur-lg">
+                <div className="p-6 rounded-xl border bg-opacity-30 backdrop-blur-lg">
                     <h2 className="text-2xl font-bold mb-4">Recent Updates</h2>
                     <div className="space-y-4">
                         <div className="flex items-center">
