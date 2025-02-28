@@ -266,7 +266,8 @@ const MeshVisualization: React.FC<Props> = ({
                       fontSize="12"
                       className="font-medium"
                     >
-                      {macToIpAddress(address)}
+                      {formatMacAddress(address)}
+
                     </text>
                     <text
                       x={pos.x}
@@ -275,7 +276,7 @@ const MeshVisualization: React.FC<Props> = ({
                       fill="#64748B"
                       fontSize="10"
                     >
-                      {formatMacAddress(address)}
+
                     </text>
                   </g>
 
@@ -316,20 +317,14 @@ const MeshVisualization: React.FC<Props> = ({
                         <text
                           x={pos.x - 75}
                           y={pos.y - 45}
-                          fill="#FFFFFF"
+                            fill="#94A3B8"
                           fontSize="12"
                           className="font-medium"
                         >
-                          {macToIpAddress(address)}
+  {formatMacAddress(address)}
+                          {/* {macToIpAddress(address)} */}
                         </text>
-                        <text
-                          x={pos.x - 75}
-                          y={pos.y - 25}
-                          fill="#94A3B8"
-                          fontSize="11"
-                        >
-                          {formatMacAddress(address)}
-                        </text>
+          
                         <line
                           x1={pos.x - 75}
                           y1={pos.y - 15}
@@ -339,7 +334,7 @@ const MeshVisualization: React.FC<Props> = ({
                           strokeWidth="1"
                         />
                         <text
-                          x={pos.x - 75}
+                          x={pos.x - 65}
                           y={pos.y}
                           fill={qualityInfo.textColor}
                           fontSize="11"

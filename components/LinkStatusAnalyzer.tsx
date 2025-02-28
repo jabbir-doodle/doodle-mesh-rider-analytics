@@ -437,11 +437,11 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="text-white font-medium">
+                        {/* <div className="text-white font-medium">
                           {macToIpAddress(station.mac)}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-gray-400 font-mono">
+                        </div> */}
+                        <div className="text-white font-medium">
+                          <span className="text-l text-gray-800 font-mono">
                             {formatMacAddress(station.mac)}
                           </span>
                           <span className={`px-2 py-0.5 text-xs rounded-full ${signalQuality === 'good'

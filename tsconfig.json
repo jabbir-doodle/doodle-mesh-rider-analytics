@@ -35,7 +35,7 @@
     "types/**/*.d.ts",
     ".next/types/**/*.ts",
     "out/types/**/*.ts"
-  ],
+, "components/ThroughputCalculator.tsx"  ],
   "exclude": [
     "node_modules"
   ]
