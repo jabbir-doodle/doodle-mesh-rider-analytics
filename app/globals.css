@@ -614,3 +614,15 @@ body.light-mode {
 .light-mode .bg-orange-500\/20 {
   background-color: rgba(249, 115, 22, 0.1) !important;
 }
+
+/* Prevent image background flickering during theme transition */
+.theme-card {
+  isolation: isolate;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: subpixel-antialiased;
+}
+
+/* Better shadow for dark mode */
+.dark .theme-card {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}

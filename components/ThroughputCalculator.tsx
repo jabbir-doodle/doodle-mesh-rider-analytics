@@ -87,6 +87,22 @@ const ThroughputCalculator: FC = () => {
       codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
       bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
     },
+    "2KW": { // Added wearable device mapping
+      power: [27, 26, 26, 26, 25, 24, 23, 21],
+      sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
+      modulation: [
+        "BPSK",
+        "QPSK",
+        "QPSK",
+        "16-QAM",
+        "16-QAM",
+        "64-QAM",
+        "64-QAM",
+        "64-QAM",
+      ],
+      codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
+      bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
+    },
   };
 
   const deviceDetails: DeviceDetails = {

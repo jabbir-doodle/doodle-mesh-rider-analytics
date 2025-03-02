@@ -447,13 +447,13 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                                 </div>
                                 <div>
                                     <h2 className="text-xl font-bold text-white">
-                                    <span className="text-sm text-gray-400 font-mono">
+                                        <span className="text-sm text-gray-400 font-mono">
                                             {formatMacAddress(node.orig_address)}
                                         </span>
                                         <span className="px-2 py-0.5 bg-gray-700 rounded-full text-xs text-gray-300">
                                             {node.hop_status.toUpperCase()}
                                         </span>
-                                       {/* // {macToIpAddress(node.orig_address)} */}
+                                        {/* // {macToIpAddress(node.orig_address)} */}
                                     </h2>
                                     {/* <div className="flex items-center gap-2 mt-1">
                                        
@@ -489,7 +489,7 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                     </div>
 
                     {/* Metric Cards */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-6">
                         <MetricCard
                             title="Link Quality"
                             value={normalizedQuality}
@@ -500,22 +500,6 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                                 setShowOverview(false);
                             }}
                             status={getQualityStatus(normalizedQuality)}
-                        />
-                        <MetricCard
-                            title="Network Paths"
-                            value={pathStats.total}
-                            icon={GitBranch}
-                            onClick={() => {
-                                setSelectedMetric('distribution');
-                                setShowOverview(false);
-                            }}
-                            status={getPathStatus(pathStats.direct, pathStats.total)}
-                        />
-                        <MetricCard
-                            title="Direct Links"
-                            value={pathStats.direct}
-                            icon={Wifi}
-                            status="normal"
                         />
                         <MetricCard
                             title="Response Time"
@@ -529,6 +513,7 @@ const MeshDetails: React.FC<MeshDetailsProps> = ({
                             status={node.last_seen_msecs < 1000 ? 'normal' : 'warning'}
                         />
                     </div>
+
 
                     {/* Compare Metrics Section */}
                     <div className="mb-6">
