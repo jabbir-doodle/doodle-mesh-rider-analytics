@@ -1,6 +1,7 @@
 'use client';
 import MeshVisualization from '../components/MeshVisualization';
 import React, { useState } from 'react';
+import RssiNoiseChart from './RssiNoiseChart';
 import {
   LineChart,
   Line,
@@ -39,10 +40,11 @@ interface LinkStatusAnalyzerProps {
 export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerProps) {
   const [logData, setLogData] = useState(() => initialData ? parseLogFile(initialData) : []);
   const [selectedStation, setSelectedStation] = useState<StationStat | null>(null);
-  const [selectedMetric, setSelectedMetric] = useState<string>('noiseFloor');
+  const [selectedMetric, setSelectedMetric] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const [selectedMeshNode, setSelectedMeshNode] = useState<MeshStat | null>(null);
   const [showCombinedMetrics, setShowCombinedMetrics] = useState(false);
+  const [showRssiNoiseChart, setShowRssiNoiseChart] = useState(true);
   const handleFileLoaded = (content: string) => {
     try {
       setIsLoading(true);
@@ -235,27 +237,97 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
               <Server className="h-5 w-5 text-blue-500" />
               <h2 className="text-lg font-semibold text-white">Performance Metrics</h2>
             </div>
-            <button
-              onClick={() => setShowCombinedMetrics(!showCombinedMetrics)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
-            >
-              <Activity className="h-4 w-4" />
-              {showCombinedMetrics ? 'Hide All Metrics' : 'Show All Metrics'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  setShowRssiNoiseChart(!showRssiNoiseChart);
+                  if (!showRssiNoiseChart) {
+                    setSelectedMetric('');
+                    setShowCombinedMetrics(false);
+                  }
+                }}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center gap-2"
+              >
+                <Signal className="h-4 w-4" />
+                {showRssiNoiseChart ? 'Hide RSSI+Noise' : 'Show RSSI+Noise'}
+              </button>
+              <button
+                onClick={() => {
+                  setShowCombinedMetrics(!showCombinedMetrics);
+                  if (!showCombinedMetrics) {
+                    setShowRssiNoiseChart(false);
+                    setSelectedMetric('');
+                  } else {
+                    setShowRssiNoiseChart(true);
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
+              >
+                <Activity className="h-4 w-4" />
+                {showCombinedMetrics ? 'Hide All Metrics' : 'Show All Metrics'}
+              </button>
+            </div>
           </div>
 
           {/* Keep the existing metric cards */}
           <div className="grid grid-cols-4 gap-6 mb-8">
-            <MetricCard title="Noise Floor" value={Math.round(latestData.noise)} unit=" dBm" icon={Signal} status={latestData.noise > -75 ? 'warning' : 'normal'} onClick={() => handleMetricClick('noiseFloor')} />
-            <MetricCard title="Channel Activity" value={latestData.activity} unit="%" icon={Activity} status={latestData.activity > 70 ? 'warning' : 'normal'} onClick={() => handleMetricClick('activity')} />
-            <MetricCard title="CPU Load" value={latestData.cpuLoad} unit="%" icon={Cpu} status={latestData.cpuLoad > 80 ? 'warning' : 'normal'} onClick={() => handleMetricClick('cpu')} />
-            <MetricCard title="Memory Available" value={latestData.memory} unit=" MB" icon={Database} status="normal" onClick={() => handleMetricClick('memory')} />
-            {/* <MetricCard title="Inactive Time" value={latestData.inactive || 0} unit="ms" icon={Activity} status="normal" onClick={() => handleMetricClick('inactive')} /> */}
+            <MetricCard
+              title="Noise Floor"
+              value={Math.round(latestData.noise)}
+              unit=" dBm"
+              icon={Signal}
+              status={latestData.noise > -75 ? 'warning' : 'normal'}
+              onClick={() => {
+                setSelectedMetric('noiseFloor');
+                setShowRssiNoiseChart(false);
+                setShowCombinedMetrics(false);
+              }}
+            />
+            <MetricCard
+              title="Channel Activity"
+              value={latestData.activity}
+              unit="%"
+              icon={Activity}
+              status={latestData.activity > 70 ? 'warning' : 'normal'}
+              onClick={() => {
+                setSelectedMetric('activity');
+                setShowRssiNoiseChart(false);
+                setShowCombinedMetrics(false);
+              }}
+            />
+            <MetricCard
+              title="CPU Load"
+              value={latestData.cpuLoad}
+              unit="%"
+              icon={Cpu}
+              status={latestData.cpuLoad > 80 ? 'warning' : 'normal'}
+              onClick={() => {
+                setSelectedMetric('cpu');
+                setShowRssiNoiseChart(false);
+                setShowCombinedMetrics(false);
+              }}
+            />
+            <MetricCard
+              title="Memory Available"
+              value={latestData.memory}
+              unit=" MB"
+              icon={Database}
+              status="normal"
+              onClick={() => {
+                setSelectedMetric('memory');
+                setShowRssiNoiseChart(false);
+                setShowCombinedMetrics(false);
+              }}
+            />
           </div>
 
           {/* Show either the combined metrics chart or the individual metric charts */}
           {showCombinedMetrics ? (
             <CombinedMetricsChart />
+          ) : showRssiNoiseChart ? (
+            <div className="bg-gray-900 p-6 rounded-lg col-span-2 mb-8">
+              <RssiNoiseChart logData={logData} />
+            </div>
           ) : (
             <div id="performance-graphs" className="grid grid-cols-2 gap-6 mb-8">
               {selectedMetric === 'noiseFloor' && (
