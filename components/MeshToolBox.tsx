@@ -207,14 +207,7 @@ const MeshToolbox: FC = () => {
         <div className={`relative min-h-screen overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
             {isDarkMode ? (
                 <ParticleBackground />
-            ) : (
-                <div className="absolute inset-0">
-                    <video autoPlay muted loop className="w-full h-full object-cover">
-                        <source src="/light-hero.mp4" type="video/mp4" />
-                    </video>
-                    <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white opacity-70"></div>
-                </div>
-            )}
+            ) : (<ParticleBackground />)}
 
             {/* Container updated to max-w-7xl and p-4 for narrower side margins */}
             <div className="relative z-20 max-w-7xl mx-auto p-4">

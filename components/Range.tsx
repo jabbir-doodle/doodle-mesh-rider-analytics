@@ -2,12 +2,17 @@ import React, { useState, useEffect, useRef, FC } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     ResponsiveContainer, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend,
-    Line, Area, ComposedChart, ReferenceLine, ScatterChart, Scatter, ZAxis, AreaChart
+    Line, Area, ComposedChart, ReferenceLine, ScatterChart, Scatter, ZAxis
 } from "recharts";
 import {
     Sliders, Wifi, Zap, ChevronDown, ChevronUp, Activity, RefreshCw, ArrowRight,
     Eye, Radio, BarChart2, CloudRain, Thermometer, Map, Signal, Layers
 } from "lucide-react";
+import {
+    InputFieldProps, DeviceCardProps, McsRangeItemProps, CustomTooltipProps,
+    RadioModels, ChartDataPoint, AccordionState, AnalysisResults, Constants,
+    getDeviceColor, DeviceDetail, RangeCalculationResult
+} from "../types/common";
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -29,8 +34,7 @@ const fadeIn = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { duration: 0.4 } },
 };
-
-const InputField = ({
+const InputField: FC<InputFieldProps> = ({
     label, id, value, onChange, type = "text", min, max, step,
     options, disabled, checked, className = ""
 }) => (
@@ -40,7 +44,7 @@ const InputField = ({
         </label>
         {type === "select" ? (
             <select
-                id={id} value={value} onChange={onChange} disabled={disabled}
+                id={id} value={value as string | number} onChange={onChange} disabled={disabled}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             >
                 {options?.map(option => (
@@ -52,14 +56,14 @@ const InputField = ({
         ) : type === "checkbox" ? (
             <div className="flex items-center mt-2">
                 <input
-                    type="checkbox" id={id} checked={checked} onChange={onChange}
+                    type="checkbox" id={id} checked={checked ?? (value as boolean)} onChange={onChange}
                     className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-700 rounded"
                 />
                 <span className="ml-2 text-sm text-gray-300">{label}</span>
             </div>
         ) : (
             <input
-                type={type} id={id} value={value} onChange={onChange}
+                type={type} id={id} value={value as string | number} onChange={onChange}
                 min={min} max={max} step={step}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             />
@@ -67,14 +71,7 @@ const InputField = ({
     </div>
 );
 
-const DeviceCard = ({ deviceKey, device, isSelected, onClick }) => {
-    const getDeviceColor = (key) => {
-        const colors = {
-            "1L": "blue", "2L": "amber", "2KO": "violet", "2KW": "emerald"
-        };
-        return colors[key] || "amber";
-    };
-    
+const DeviceCard: FC<DeviceCardProps> = ({ deviceKey, device, isSelected, onClick }) => {
     const color = getDeviceColor(deviceKey);
 
     return (
@@ -82,14 +79,12 @@ const DeviceCard = ({ deviceKey, device, isSelected, onClick }) => {
             whileHover={{ y: -5, transition: { duration: 0.2 } }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className={`bg-gray-800 hover:bg-gray-750 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer h-full ${
-                isSelected ? `ring-2 ring-${color}-500 shadow-lg shadow-${color}-500/20` : "ring-1 ring-gray-700"
-            }`}
+            className={`bg-gray-800 hover:bg-gray-750 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer h-full ${isSelected ? `ring-2 ring-${color}-500 shadow-lg shadow-${color}-500/20` : "ring-1 ring-gray-700"
+                }`}
         >
             <div className="p-4 flex flex-col items-center h-full">
-                <div className={`w-full h-20 flex items-center justify-center mb-4 rounded-lg ${
-                    isSelected ? `bg-${color}-950/30` : 'bg-gray-900/30'
-                }`}>
+                <div className={`w-full h-20 flex items-center justify-center mb-4 rounded-lg ${isSelected ? `bg-${color}-950/30` : 'bg-gray-900/30'
+                    }`}>
                     <img src={device.image} alt={device.name} className="h-16 w-auto object-contain" />
                 </div>
                 <div className="text-center">
@@ -107,10 +102,10 @@ const DeviceCard = ({ deviceKey, device, isSelected, onClick }) => {
     );
 };
 
-const McsRangeItem = ({ result }) => {
+const McsRangeItem: FC<McsRangeItemProps> = ({ result }) => {
     const textClass = result.withinThroughput ? "text-green-500" : "text-red-500";
     const clearanceClass = result.withinClearance ? "text-green-500" : "text-red-500";
-    
+
     return (
         <div className="p-2 flex flex-col border-b border-gray-700 last:border-b-0">
             <div className="flex justify-between items-center">
@@ -129,7 +124,7 @@ const McsRangeItem = ({ result }) => {
     );
 };
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip: FC<CustomTooltipProps> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-gray-900 p-3 border border-gray-700 rounded-lg shadow-xl">
@@ -149,70 +144,64 @@ const CustomTooltip = ({ active, payload, label }) => {
     return null;
 };
 
-const Constants = {
-    ipv4: 20,
-    eth2: 14, 
-    batAdv: 10, 
-    llc: 8, 
-    ieee80211: 42, 
-    phy: 4,
-    mpduDelimiter: 0, 
-    aifs: 8, 
-    cwSize: 15, 
-    phyHeader11n: 40, 
-    ltf: 4, 
-    sifs: 10, 
-    baSize: 32,
-    txop: 100000,
-    psr: 90
-};
+const RangeCalculator: FC = () => {
+    const [multiPathFading, setMultiPathFading] = useState<boolean>(false);
+    const [fadingIntensity, setFadingIntensity] = useState<number>(3);
+    const [fadingModel, setFadingModel] = useState<string>("rayleigh");
+    const [telemetry, setTelemetry] = useState<string>("50");
+    const [video, setVideo] = useState<string>("3");
+    const [frequency, setFrequency] = useState<string>("2450");
+    const [bw, setBw] = useState<number>(20);
+    const [udpPayload] = useState<number>(1500);
+    const [antennas, setAntennas] = useState<number>(2);
+    const [streams, setStreams] = useState<number>(2);
+    const [fadeMargin, setFadeMargin] = useState<string>("10");
+    const [antGain, setAntGain] = useState<string>("6");
+    const [overGround, setOverGround] = useState<boolean>(false);
+    const [AGL, setAGL] = useState<string>("400");
+    const [unit, setUnit] = useState<string>("feet");
+    const [powerLimit, setPowerLimit] = useState<string>("33");
+    const [srVariant, setSrVariant] = useState<string>("2L");
+    const [climate, setClimate] = useState<string>("clear");
+    const [temperature, setTemperature] = useState<number>(25);
+    const [pathLossModel, setPathLossModel] = useState<string>("free");
+    const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+    const [snrData, setSnrData] = useState<any[]>([]);
+    const [coverageData, setCoverageData] = useState<any[]>([]);
+    const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
+    const [isCalculating, setIsCalculating] = useState<boolean>(false);
+    const [calculationMode, setCalculationMode] = useState<string>("mcs8_15");
+    const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
+    const [activeTab, setActiveTab] = useState<string>("range");
 
-const RangeCalculator = () => {
-    // Basic parameters
-    const [telemetry, setTelemetry] = useState("50");
-    const [video, setVideo] = useState("3");
-    const [frequency, setFrequency] = useState("2450");
-    const [bw, setBw] = useState(20);
-    const [udpPayload] = useState(1500);
-    const [antennas, setAntennas] = useState(2);
-    const [streams, setStreams] = useState(2);
-    const [fadeMargin, setFadeMargin] = useState("10");
-    const [antGain, setAntGain] = useState("6");
-    const [overGround, setOverGround] = useState(false);
-    const [AGL, setAGL] = useState("400");
-    const [unit, setUnit] = useState("feet");
-    const [powerLimit, setPowerLimit] = useState("33");
-    const [srVariant, setSrVariant] = useState("2L");
-    
-    // New environmental parameters
-    const [climate, setClimate] = useState("clear");
-    const [temperature, setTemperature] = useState(25);
-    const [pathLossModel, setPathLossModel] = useState("free");
-    
-    // UI state
-    const [chartData, setChartData] = useState([]);
-    const [snrData, setSnrData] = useState([]);
-    const [coverageData, setCoverageData] = useState([]);
-    const [analysisResults, setAnalysisResults] = useState(null);
-    const [isCalculating, setIsCalculating] = useState(false);
-    const [calculationMode, setCalculationMode] = useState("mcs8_15");
-    const [advancedOpen, setAdvancedOpen] = useState(false);
-    const [accordionState, setAccordionState] = useState({
+    const handleMultiPathFadingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setMultiPathFading((e.target as HTMLInputElement).checked);
+    };
+
+    const handleFadingIntensityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFadingIntensity(parseInt(e.target.value));
+    };
+
+    const handleFadingModelChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFadingModel(e.target.value);
+    };
+
+
+    const [accordionState, setAccordionState] = useState<AccordionState>({
         throughputOptimization: false,
         fresnelOptimization: false,
         environmentalFactors: false
     });
-    const [activeTab, setActiveTab] = useState("range");
-    
-    const chartRef = useRef(null);
 
-    const radioModels = {
+    const chartRef = useRef<HTMLDivElement>(null);
+
+    const radioModels: RadioModels = {
         "1L": {
             name: "nanoOEM",
             power: [24, 23, 23, 23, 22, 21, 20, 18],
             sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
             modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-            codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+            codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
             bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
             image: "/nano.png"
         },
@@ -221,7 +210,7 @@ const RangeCalculator = () => {
             power: [27, 26, 26, 26, 25, 24, 23, 21],
             sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
             modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-            codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+            codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
             bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
             image: "/mini.png"
         },
@@ -230,7 +219,7 @@ const RangeCalculator = () => {
             power: [27, 26, 26, 26, 25, 24, 23, 21],
             sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
             modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-            codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+            codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
             bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
             image: "/oem.png"
         },
@@ -239,7 +228,7 @@ const RangeCalculator = () => {
             power: [27, 26, 26, 26, 25, 24, 23, 21],
             sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
             modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-            codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+            codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
             bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
             image: "/wear.png"
         }
@@ -247,21 +236,29 @@ const RangeCalculator = () => {
 
     useEffect(() => {
         if (srVariant === "1L") {
-            // Only enforce max power limit for 1L devices
             if (parseFloat(powerLimit) > 30) setPowerLimit("30");
             setAntennas(1);
             setStreams(1);
         } else {
-            // For non-1L devices, only enforce antenna/stream minimums
-            // Removed the minimum power limit constraint
+            // Only set if needed to avoid infinite loops
+            if (antennas < 2) setAntennas(2);
+            if (streams < 2) setStreams(2);
+        }
+    }, [srVariant, powerLimit, antennas, streams]);
+    useEffect(() => {
+        if (srVariant === "1L") {
+            if (parseFloat(powerLimit) > 30) setPowerLimit("30");
+            setAntennas(1);
+            setStreams(1);
+        } else {
             if (antennas < 2) setAntennas(2);
             if (streams < 2) setStreams(2);
         }
     }, [srVariant, powerLimit]);
 
-    const convertAGLUnit = (newUnit) => {
+    const convertAGLUnit = (newUnit: string): void => {
         if (newUnit !== unit) {
-            let newAGL;
+            let newAGL: number;
             if (newUnit === "meters") {
                 newAGL = parseFloat(AGL) / 3.28084;
             } else {
@@ -272,74 +269,82 @@ const RangeCalculator = () => {
         }
     };
 
-    const toggleAccordion = (section) => {
+    const toggleAccordion = (section: string): void => {
         setAccordionState({
             ...accordionState,
             [section]: !accordionState[section],
         });
     };
 
-    const handleNumericChange = (setter) => (e) => {
-        setter(e.target.value);
-    };
+    const handleNumericChange = (setter: React.Dispatch<React.SetStateAction<string>>) =>
+        (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+            setter(e.target.value);
+        };
 
-    const calculatePathLoss = (distance, freq) => {
+    const calculatePathLoss = (distance: number, freq: number): number => {
         const freqGHz = freq / 1000;
         let baseLoss = 0;
-        
-        // Calculate base path loss based on selected model
+
         if (pathLossModel === "free") {
             baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45;
         } else if (pathLossModel === "ground") {
-            const h1 = unit === "feet" ? parseFloat(AGL) / 3.28084 : parseFloat(AGL); // Height in meters
-            const h2 = h1; // Assuming same height for both ends
-            baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 - 
-                     20 * Math.log10(h1*h2) + 10;
+            const h1 = unit === "feet" ? parseFloat(AGL) / 3.28084 : parseFloat(AGL);
+            const h2 = h1;
+            baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 -
+                20 * Math.log10(h1 * h2) + 10;
         } else if (pathLossModel === "urban") {
-            baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 + 
-                     (distance < 500 ? 0 : 20);
+            // Simplified COST-Hata model for urban areas
+            baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 +
+                (distance < 500 ? 0 : 20) + (freqGHz > 2 ? 3 : 0);
+        } else if (pathLossModel === "suburban") {
+            // Simplified model for suburban areas with less obstruction
+            baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 +
+                (distance < 500 ? 0 : 15);
         } else {
             baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45;
         }
-        
-        // Apply climate attenuation factors
+
         let climateAttenuation = 0;
-        
+
         switch (climate) {
             case "rain":
-                // ITU-R P.838-3 model (simplified)
                 climateAttenuation = freqGHz > 5 ? 0.01 * Math.pow(freqGHz, 1.6) * distance / 1000 : 0.005 * freqGHz * distance / 1000;
                 break;
             case "fog":
-                // ITU-R P.840-6 model (simplified)
                 climateAttenuation = 0.0001 * Math.pow(freqGHz, 2) * distance / 1000;
                 break;
             case "snow":
-                // Snow attenuation is typically higher than rain
                 climateAttenuation = 0.02 * Math.pow(freqGHz, 1.6) * distance / 1000;
                 break;
             case "humid":
-                // Higher humidity causes additional attenuation especially at higher frequencies
-                const humidityFactor = Math.abs(temperature - 25) / 10; // Temperature deviation factor
+                const humidityFactor = Math.abs(temperature - 25) / 10;
                 climateAttenuation = 0.0003 * Math.pow(freqGHz, 2) * humidityFactor * distance / 1000;
                 break;
-            case "clear":
-            default:
-                climateAttenuation = 0;
         }
-        
-        // Temperature effects on electronics (simplified)
         let temperatureEffect = 0;
         if (temperature < 0) {
-            temperatureEffect = Math.abs(temperature) * 0.05; // Cold degrades performance
+            temperatureEffect = Math.abs(temperature) * 0.05;
         } else if (temperature > 40) {
-            temperatureEffect = (temperature - 40) * 0.1; // Heat degrades performance more rapidly
+            temperatureEffect = (temperature - 40) * 0.1;
         }
-        
-        return baseLoss + climateAttenuation + temperatureEffect;
+        let fadingEffect = 0;
+        if (multiPathFading) {
+            if (fadingModel === "rayleigh") {
+
+                const fadingFactor = (Math.sin(distance * 0.3) + Math.cos(freqGHz * 2)) * fadingIntensity;
+                fadingEffect = fadingFactor;
+            } else if (fadingModel === "rician") {
+
+                const directPath = 0.7;
+                const scatteredPaths = (Math.sin(distance * 0.4) + Math.cos(freqGHz * 1.8)) * fadingIntensity * 0.5;
+                fadingEffect = directPath > scatteredPaths ? directPath : scatteredPaths;
+            }
+        }
+
+        return baseLoss + climateAttenuation + temperatureEffect + fadingEffect;
     };
 
-    const calculateRange = (mode) => {
+    const calculateRange = (mode: string): void => {
         setIsCalculating(true);
         setCalculationMode(mode);
 
@@ -362,18 +367,18 @@ const RangeCalculator = () => {
             if (overGround) {
                 freqCorrection = Math.round(
                     10000 * (-0.0000000000313 * Math.pow(freqMhz, 3) +
-                            0.0000004618 * Math.pow(freqMhz, 2) -
-                            0.0024096 * freqMhz + 5.8421)
+                        0.0000004618 * Math.pow(freqMhz, 2) -
+                        0.0024096 * freqMhz + 5.8421)
                 ) / 10000;
                 if (ampdu > 2) ampdu = 2;
             }
 
-            const rangeArr = [];
-            const mcsIndexArr = [];
-            const tptAdjusted = [];
-            const fresnelClearanceDistance = [];
-            const rangeCalculationResults = [];
-            const snrValues = [];
+            const rangeArr: number[] = [];
+            const mcsIndexArr: number[] = [];
+            const tptAdjusted: number[] = [];
+            const fresnelClearanceDistance: number[] = [];
+            const rangeCalculationResults: RangeCalculationResult[] = [];
+            const snrValues: number[] = [];
 
             let currentRadioModel = { ...radioModels[srVariant] };
             let sensitivityArr = [...currentRadioModel.sensitivity];
@@ -387,104 +392,77 @@ const RangeCalculator = () => {
             let maxMcsRate = 0;
 
             for (let index = 0; index < 8; index++) {
-                // Apply power limit
                 powerArr[index] = Math.min(powerArr[index], parseFloat(powerLimit) - 3);
-                
-                // Adjust sensitivity based on antenna configuration and bandwidth
                 sensitivityArr[index] = sensitivityArr[index] -
-                                      10 * Math.log10(antennas / actualStreams) -
-                                      10 * Math.log10(20 / bw);
-
-                // Calculate MCS index
+                    10 * Math.log10(antennas / actualStreams) -
+                    10 * Math.log10(20 / bw);
                 mcsIndexArr[index] = index + (actualStreams - 1) * 8;
 
-                // Calculate link speed
                 const linkSpeed = currentRadioModel.bitsPerSymbol[index] *
-                                currentRadioModel.codingRate[index] *
-                                actualStreams * 13 * bw / 20;
+                    currentRadioModel.codingRate[index] *
+                    actualStreams * 13 * bw / 20;
 
-                // Calculate basic speed
                 const basicSpeed = 12 * (bw / 20) *
-                                currentRadioModel.bitsPerSymbol[index] *
-                                Math.min(currentRadioModel.codingRate[index], 0.75);
+                    currentRadioModel.bitsPerSymbol[index] *
+                    Math.min(currentRadioModel.codingRate[index], 0.75);
 
-                // Determine maximum frames that can be aggregated
                 const maxFrames = Math.max(
                     Math.min(
-                        Constants.txop / (((udpPayload + Constants.ipv4 + Constants.eth2 + 
-                                         Constants.batAdv + Constants.llc + 
-                                         Constants.ieee80211 + Constants.phy) * 8) / linkSpeed),
+                        Constants.txop / (((udpPayload + Constants.ipv4 + Constants.eth2 +
+                            Constants.batAdv + Constants.llc +
+                            Constants.ieee80211 + Constants.phy) * 8) / linkSpeed),
                         ampdu
                     ),
                     1
                 );
 
-                // Calculate aggregated payload size
-                const ampduWindow = (udpPayload + Constants.ipv4 + Constants.eth2 + 
-                                   Constants.batAdv + Constants.llc + 
-                                   Constants.ieee80211 + Constants.phy) * maxFrames;
+                const ampduWindow = (udpPayload + Constants.ipv4 + Constants.eth2 +
+                    Constants.batAdv + Constants.llc +
+                    Constants.ieee80211 + Constants.phy) * maxFrames;
 
-                // Calculate PHY transmission time
                 const phyTime = (ampdu - 1) * Constants.mpduDelimiter +
-                              Math.ceil((ampduWindow * 8 / linkSpeed) / 4) * 4;
+                    Math.ceil((ampduWindow * 8 / linkSpeed) / 4) * 4;
 
-                // Calculate BA response time
                 const baRes = Constants.sifs + (Constants.phyHeader11n + actualStreams * Constants.ltf) +
-                            Math.ceil((Constants.baSize * 8) / (basicSpeed * (bw / 20)));
+                    Math.ceil((Constants.baSize * 8) / (basicSpeed * (bw / 20)));
 
-                // Calculate range with climate and temperature adjustments
-                // First, get base range without environmental factors
                 const baseRange = Math.pow(
-                    10, (powerArr[index] - sensitivityArr[index] - parseFloat(fadeMargin) + parseFloat(antGain)) / 
-                        (20 + freqCorrection)
+                    10, (powerArr[index] - sensitivityArr[index] - parseFloat(fadeMargin) + parseFloat(antGain)) /
+                (20 + freqCorrection)
                 ) * 300 / (freqMhz * 4 * Math.PI);
-                
-                // Iteratively adjust range based on environmental factors
+
                 let adjustedRange = baseRange;
                 let prevRange = 0;
-                
-                // Iterative approach to find stable range with environmental factors
-                for (let i = 0; i < 5; i++) {  // Usually converges in 3-5 iterations
+
+                for (let i = 0; i < 5; i++) {
                     const pathLoss = calculatePathLoss(adjustedRange, freqMhz);
-                    const envAdjustment = pathLoss - (20 * Math.log10(adjustedRange) + 20 * Math.log10(freqMhz/1000) + 92.45);
-                    
+                    const envAdjustment = pathLoss - (20 * Math.log10(adjustedRange) + 20 * Math.log10(freqMhz / 1000) + 92.45);
+
                     prevRange = adjustedRange;
                     adjustedRange = Math.pow(
-                        10, (powerArr[index] - sensitivityArr[index] - parseFloat(fadeMargin) + parseFloat(antGain) - envAdjustment) / 
-                            (20 + freqCorrection)
+                        10, (powerArr[index] - sensitivityArr[index] - parseFloat(fadeMargin) + parseFloat(antGain) - envAdjustment) /
+                    (20 + freqCorrection)
                     ) * 300 / (freqMhz * 4 * Math.PI);
-                    
-                    // Check for convergence
+
                     if (Math.abs(adjustedRange - prevRange) < 0.1) break;
                 }
-                
-                // Store the adjusted range
+
                 rangeArr[index] = parseFloat(adjustedRange.toFixed(1));
 
-                // Calculate SNR
-                const noiseFloor = -174 + 10 * Math.log10(bw * 1e6);  // Thermal noise in dBm
-                const receivedPower = powerArr[index] + parseFloat(antGain) - 
-                                   calculatePathLoss(rangeArr[index], freqMhz);
+                const noiseFloor = -174 + 10 * Math.log10(bw * 1e6);
+                const receivedPower = powerArr[index] + parseFloat(antGain) -
+                    calculatePathLoss(rangeArr[index], freqMhz);
                 snrValues[index] = parseFloat((receivedPower - noiseFloor).toFixed(1));
 
-                // Calculate transit delay
                 const nWayTransit = Math.round((1000 * 4 * rangeArr[index]) / 300) / 1000;
-                
-                // Calculate total transmission time
                 const timeNoTransit = phyTime + phyOverhead + baRes;
                 const timeTotal = parseFloat((timeNoTransit + nWayTransit).toFixed(1));
-                
-                // Calculate throughput
-                const tptIdeal = parseFloat((maxFrames * udpPayload * 8 / timeNoTransit).toFixed(1));
-                const tptMax = parseFloat((maxFrames * udpPayload * 8 / timeTotal).toFixed(1));
-                tptAdjusted[index] = parseFloat((tptMax * Constants.psr / 100).toFixed(2));
+                tptAdjusted[index] = parseFloat((maxFrames * udpPayload * 8 / timeTotal * Constants.psr / 100).toFixed(2));
 
-                // Calculate Fresnel zone clearance
                 fresnelClearanceDistance[index] = parseFloat(
                     (8.66 * Math.sqrt(rangeArr[index] / freqMhz) * 60 / 100).toFixed(1)
                 );
 
-                // Build detailed result for each MCS
                 rangeCalculationResults.push({
                     mcs: mcsIndexArr[index],
                     range: rangeArr[index],
@@ -492,12 +470,8 @@ const RangeCalculator = () => {
                     fresnelClearance: fresnelClearanceDistance[index],
                     withinThroughput: totalThroughput <= tptAdjusted[index],
                     withinClearance: AGLm >= fresnelClearanceDistance[index],
-                    snr: snrValues[index],
-                    modulation: currentRadioModel.modulation[index],
-                    codingRate: currentRadioModel.codingRate[index]
                 });
 
-                // Determine range estimation based on throughput and clearance requirements
                 if (index === 0) {
                     finalAGL = fresnelClearanceDistance[index];
                     rangeEstFinal = rangeArr[index];
@@ -516,25 +490,21 @@ const RangeCalculator = () => {
                 }
             }
 
-            // Prepare chart data
             const chartData = rangeArr.map((range, idx) => ({
                 distance: range,
                 throughput: tptAdjusted[idx],
                 fresnelClearance: fresnelClearanceDistance[idx],
                 mcs: mcsIndexArr[idx],
-                snr: snrValues[idx],
                 estimatedRange: range === rangeEstFinal,
             }));
 
-            // Prepare SNR data
             const snrData = rangeArr.map((range, idx) => ({
                 distance: range,
                 snr: snrValues[idx],
                 mcs: mcsIndexArr[idx],
             }));
 
-            // Prepare coverage data for the map
-            const coverageData = [];
+            const coverageData: any[] = [];
             for (let i = 0; i < 8; i++) {
                 for (let angle = 0; angle < 360; angle += 45) {
                     const radian = angle * Math.PI / 180;
@@ -547,22 +517,19 @@ const RangeCalculator = () => {
                 }
             }
 
-            // Calculate climate impact on range
-            let climateRangeImpact = 0;
-            let climateThroughputImpact = 0;
-            
+            let climateRangeImpact = "0.0";
+            let climateThroughputImpact = "0.0";
+
             if (climate !== "clear") {
-                // Compare with a calculation without climate effects
                 const baseRange = Math.pow(
-                    10, (powerArr[0] - sensitivityArr[0] - parseFloat(fadeMargin) + parseFloat(antGain)) / 
-                        (20 + freqCorrection)
+                    10, (powerArr[0] - sensitivityArr[0] - parseFloat(fadeMargin) + parseFloat(antGain)) /
+                (20 + freqCorrection)
                 ) * 300 / (freqMhz * 4 * Math.PI);
-                
+
                 climateRangeImpact = ((baseRange - rangeArr[0]) / baseRange * 100).toFixed(1);
                 climateThroughputImpact = ((baseRange - rangeArr[0]) / baseRange * tptAdjusted[0]).toFixed(1);
             }
 
-            // Set analysis results
             setAnalysisResults({
                 radioVariant: srVariant,
                 mcsMode: mode,
@@ -580,22 +547,13 @@ const RangeCalculator = () => {
                 aglDeltaPositive: AGLm - finalAGL > 0,
                 aglIncreaseNeeded: Math.max(0, maxAGL - AGLm).toFixed(2),
                 rangeResults: rangeCalculationResults,
-                climate,
-                temperature,
-                pathLossModel,
-                climateRangeImpact,
-                climateThroughputImpact,
-                maxSNR: snrValues[0],
-                minSNR: snrValues[snrValues.length - 1]
             });
 
-            // Set chart data
             setChartData(chartData);
             setSnrData(snrData);
             setCoverageData(coverageData);
             setIsCalculating(false);
 
-            // Scroll to results
             setTimeout(() => {
                 if (chartRef.current) {
                     chartRef.current.scrollIntoView({ behavior: "smooth" });
@@ -701,18 +659,18 @@ const RangeCalculator = () => {
                                         fill: "#FFFFFF"
                                     }}
                                 />
-                                
+
                                 <defs>
                                     <linearGradient id="gradientThroughput" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8}/>
-                                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1}/>
+                                        <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.8} />
+                                        <stop offset="95%" stopColor="#F59E0B" stopOpacity={0.1} />
                                     </linearGradient>
                                 </defs>
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
                 );
-                
+
             case "snr":
                 return (
                     <div className="h-80">
@@ -745,7 +703,7 @@ const RangeCalculator = () => {
                                 />
                                 <Tooltip />
                                 <Legend />
-                                
+
                                 <ReferenceLine
                                     y={25}
                                     stroke="#10b981"
@@ -770,7 +728,7 @@ const RangeCalculator = () => {
                                     strokeDasharray="3 3"
                                     label={{ value: 'Poor', position: 'right', fill: '#ef4444' }}
                                 />
-                                
+
                                 <Line
                                     type="monotone"
                                     dataKey="snr"
@@ -780,7 +738,7 @@ const RangeCalculator = () => {
                                     dot={{ r: 4, fill: "#3b82f6", stroke: "#000" }}
                                     activeDot={{ r: 8, fill: "#3b82f6", stroke: "#000" }}
                                 />
-                                
+
                                 <ReferenceLine
                                     x={analysisResults?.finalRange}
                                     stroke="#FFFFFF"
@@ -795,11 +753,14 @@ const RangeCalculator = () => {
                         </ResponsiveContainer>
                     </div>
                 );
-                
+
+            case "coverage":
             case "coverage":
                 return (
                     <div className="h-80">
+                        <p className="text-sm text-gray-400 mb-2 italic">A top-down view showing signal propagation and throughput in all directions from the transmitter (center){multiPathFading ? ", with multi-path fading effects applied" : ""}.</p>
                         <ResponsiveContainer width="100%" height="100%">
+
                             <ScatterChart margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
                                 <XAxis
@@ -808,7 +769,7 @@ const RangeCalculator = () => {
                                     name="Distance (m)"
                                     stroke="#94a3b8"
                                     tick={{ fill: "#94a3b8" }}
-                                    domain={[-analysisResults?.maxRange || -500, analysisResults?.maxRange || 500]}
+                                    domain={[-(analysisResults?.maxRange ?? 500), analysisResults?.maxRange ?? 500]}
                                 />
                                 <YAxis
                                     type="number"
@@ -816,7 +777,8 @@ const RangeCalculator = () => {
                                     name="Distance (m)"
                                     stroke="#94a3b8"
                                     tick={{ fill: "#94a3b8" }}
-                                    domain={[-analysisResults?.maxRange || -500, analysisResults?.maxRange || 500]}
+
+                                    domain={[-(analysisResults?.maxRange ?? 500), analysisResults?.maxRange ?? 500]}
                                 />
                                 <ZAxis
                                     type="number"
@@ -836,7 +798,7 @@ const RangeCalculator = () => {
                                     name="Coverage Map"
                                     data={coverageData}
                                     fill="#8884d8"
-                                    shape={(props) => {
+                                    shape={(props: { payload?: any; cx?: any; cy?: any; fill?: any; }) => {
                                         const { cx, cy, fill } = props;
                                         const throughput = props.payload.z;
                                         const color = `hsl(${Math.min(200, 360 - throughput * 2)}, 100%, 50%)`;
@@ -856,9 +818,9 @@ const RangeCalculator = () => {
                         </ResponsiveContainer>
                     </div>
                 );
-                
+
             default:
-                return renderTabContent("range");
+                return null;
         }
     };
 
@@ -872,8 +834,8 @@ const RangeCalculator = () => {
                 snow: "Snow causes severe signal scattering and absorption, significantly reducing range.",
                 humid: "High humidity increases water vapor in the air, causing absorption at specific frequencies."
             };
-            
-            return `${impactDescriptions[climate]} Range reduced by approximately ${analysisResults?.climateRangeImpact}%.`;
+
+            return `${impactDescriptions[climate as keyof typeof impactDescriptions]} Range reduced by approximately ${analysisResults?.climateRangeImpact}%.`;
         }
     };
 
@@ -884,10 +846,10 @@ const RangeCalculator = () => {
             snow: "Significant fade margin increase recommended; use lower frequencies when possible.",
             humid: "Consider increased antenna gain to overcome attenuation in humid conditions."
         };
-        
-        return climate === "clear" 
-            ? "Standard installation practices are sufficient for current environmental conditions." 
-            : recommendations[climate];
+
+        return climate === "clear"
+            ? "Standard installation practices are sufficient for current environmental conditions."
+            : recommendations[climate as keyof typeof recommendations];
     };
 
     return (
@@ -927,7 +889,7 @@ const RangeCalculator = () => {
 
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {Object.keys(radioModels).map((deviceKey) => {
-                                const device = {
+                                const device: DeviceDetail = {
                                     name: radioModels[deviceKey].name || "",
                                     image: radioModels[deviceKey].image || ""
                                 };
@@ -1022,7 +984,8 @@ const RangeCalculator = () => {
                                     label="Near Ground Level?"
                                     id="overGround"
                                     checked={overGround}
-                                    onChange={(e) => setOverGround(e.target.checked)}
+                                    value={overGround}
+                                    onChange={(e) => setOverGround((e.target as HTMLInputElement).checked)}
                                     type="checkbox"
                                 />
 
@@ -1048,7 +1011,6 @@ const RangeCalculator = () => {
                                     </div>
                                 </div>
 
-                                {/* Environmental Parameters */}
                                 <InputField
                                     label="Climate Condition"
                                     id="climate"
@@ -1073,7 +1035,8 @@ const RangeCalculator = () => {
                                     options={[
                                         { value: "free", label: "Free Space" },
                                         { value: "ground", label: "2-Ray Ground" },
-                                        { value: "urban", label: "Urban" }
+                                        { value: "urban", label: "Urban" },
+                                        { value: "suburban", label: "Suburban" }
                                     ]}
                                 />
 
@@ -1150,8 +1113,51 @@ const RangeCalculator = () => {
                                                     onChange={handleNumericChange(setPowerLimit)}
                                                     type="number"
                                                     min="0"
-                                                    max={srVariant === "1L" ? "30" : "33"}
+                                                    max={srVariant === "1L" ? "30" : "36"}
                                                 />
+
+                                                <div className="flex flex-col space-y-2">
+                                                    <div className="flex items-center">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="multiPathFading"
+                                                            checked={multiPathFading}
+                                                            onChange={handleMultiPathFadingChange}
+                                                            className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-700 rounded"
+                                                        />
+                                                        <label
+                                                            htmlFor="multiPathFading"
+                                                            className="ml-2 text-sm text-gray-300"
+                                                        >
+                                                            Enable Multi-Path Fading
+                                                        </label>
+                                                    </div>
+                                                </div>
+
+                                                {multiPathFading && (
+                                                    <>
+                                                        <InputField
+                                                            label="Fading Intensity (1-10)"
+                                                            id="fadingIntensity"
+                                                            value={fadingIntensity}
+                                                            onChange={handleFadingIntensityChange}
+                                                            type="number"
+                                                            min="1"
+                                                            max="10"
+                                                        />
+                                                        <InputField
+                                                            label="Fading Model"
+                                                            id="fadingModel"
+                                                            value={fadingModel}
+                                                            onChange={handleFadingModelChange}
+                                                            type="select"
+                                                            options={[
+                                                                { value: "rayleigh", label: "Rayleigh (NLOS)" },
+                                                                { value: "rician", label: "Rician (Partial LOS)" }
+                                                            ]}
+                                                        />
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
                                     </motion.div>
@@ -1230,6 +1236,124 @@ const RangeCalculator = () => {
                                     </motion.button>
                                 </div>
                             </div>
+                            {/* Environmental Analysis Section */}
+                            {analysisResults && (
+                                <div className="col-span-1 lg:col-span-2 bg-gray-900/50 rounded-xl p-5 border border-gray-800">
+                                    <h3 className="text-lg font-medium text-blue-400 flex items-center mb-4">
+                                        <CloudRain className="w-5 h-5 mr-2" />
+                                        <span>Environmental Impact Analysis</span>
+                                    </h3>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-gray-800/50 p-3 rounded-lg">
+                                            <div className="text-sm text-gray-400">Climate Condition</div>
+                                            <div className="flex items-center mt-1">
+                                                {climate === "clear" && <Wifi className="w-4 h-4 mr-2 text-green-500" />}
+                                                {climate === "rain" && <CloudRain className="w-4 h-4 mr-2 text-blue-500" />}
+                                                {climate === "fog" && <CloudRain className="w-4 h-4 mr-2 text-gray-400" />}
+                                                {climate === "snow" && <CloudRain className="w-4 h-4 mr-2 text-blue-300" />}
+                                                {climate === "humid" && <Thermometer className="w-4 h-4 mr-2 text-amber-500" />}
+                                                <div className="text-xl font-medium capitalize">{climate} Sky</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-gray-800/50 p-3 rounded-lg">
+                                            <div className="text-sm text-gray-400">Temperature Impact</div>
+                                            <div className="flex items-center mt-1">
+                                                <Thermometer className={`w-4 h-4 mr-2 ${temperature < 0 ? 'text-blue-500' :
+                                                    temperature > 40 ? 'text-red-500' : 'text-green-500'
+                                                    }`} />
+                                                <div className="text-xl font-medium">{temperature}°C</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-gray-800/50 p-3 rounded-lg">
+                                            <div className="text-sm text-gray-400">Signal Quality</div>
+                                            <div className="flex items-center mt-1">
+                                                <Signal className={`w-4 h-4 mr-2 ${snrData.length > 0 ? (
+                                                    Math.min(...snrData.map(d => d.snr)) > 20 ? 'text-green-500' :
+                                                        Math.min(...snrData.map(d => d.snr)) > 10 ? 'text-amber-500' :
+                                                            'text-red-500'
+                                                ) : 'text-gray-400'
+                                                    }`} />
+                                                <div className="text-xl font-medium">
+                                                    {snrData.length > 0 ? (
+                                                        `SNR: ${Math.max(...snrData.map(d => d.snr)).toFixed(1)} to ${Math.min(...snrData.map(d => d.snr)).toFixed(1)} dB`
+                                                    ) : (
+                                                        "SNR: N/A"
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-4">
+                                        <div
+                                            className="flex justify-between items-center cursor-pointer p-2 rounded hover:bg-gray-800/50"
+                                            onClick={() => toggleAccordion("environmentalFactors")}
+                                        >
+                                            <h4 className="font-medium text-white">Environmental Considerations</h4>
+                                            {accordionState.environmentalFactors ? (
+                                                <ChevronUp className="w-4 h-4 text-gray-400" />
+                                            ) : (
+                                                <ChevronDown className="w-4 h-4 text-gray-400" />
+                                            )}
+                                        </div>
+
+                                        {accordionState.environmentalFactors && (
+                                            <motion.div
+                                                initial={{ height: 0, opacity: 0 }}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.3 }}
+                                                className="overflow-hidden"
+                                            >
+                                                <div className="p-3 bg-gray-800/30 rounded-lg mt-2 text-sm space-y-2">
+                                                    <p className="text-gray-300">
+                                                        <span className="font-medium text-blue-400">Climate Impact:</span>{" "}
+                                                        {getClimateImpactDescription()}
+                                                        {multiPathFading && (
+                                                            <>
+                                                                {" "}<span className="text-amber-400">Multi-path fading ({fadingModel}, intensity: {fadingIntensity})</span> adds
+                                                                signal variations of ±{fadingIntensity.toFixed(1)} dB, resulting in less predictable performance and potential
+                                                                dead zones within the coverage area.
+                                                            </>
+                                                        )}
+                                                    </p>
+
+                                                    {climate !== "clear" && (
+                                                        <p className="text-gray-300">
+                                                            <span className="font-medium text-amber-400">Throughput Impact:</span>{" "}
+                                                            In {climate} conditions, maximum throughput is reduced by approximately {analysisResults?.climateThroughputImpact ?? '0'} Mbps.
+                                                        </p>
+                                                    )}
+
+                                                    <p className="text-gray-300">
+                                                        <span className="font-medium text-green-400">Temperature Considerations:</span>{" "}
+                                                        {temperature < 0
+                                                            ? `Cold temperatures (${temperature}°C) may reduce battery life and increase component failures.`
+                                                            : temperature > 40
+                                                                ? `High temperatures (${temperature}°C) increase thermal noise and reduce component efficiency.`
+                                                                : `Current temperature (${temperature}°C) is within optimal operating range.`
+                                                        }
+                                                    </p>
+
+                                                    <p className="text-gray-300">
+                                                        <span className="font-medium text-violet-400">Recommendations:</span>{" "}
+                                                        {getRecommendationForClimate()}
+                                                        {temperature < 0
+                                                            ? " Consider thermal enclosures for equipment."
+                                                            : temperature > 40
+                                                                ? " Provide adequate ventilation or cooling for equipment."
+                                                                : ""
+                                                        }
+                                                    </p>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </motion.div>
 
@@ -1248,39 +1372,36 @@ const RangeCalculator = () => {
                                             <Activity className="w-5 h-5 mr-2 text-amber-400" />
                                             <span>RF Performance Analysis</span>
                                         </h2>
-                                        
+
                                         <div className="flex space-x-2">
                                             <button
                                                 onClick={() => setActiveTab("range")}
-                                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                                                    activeTab === "range" 
-                                                    ? "bg-amber-600 text-white" 
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "range"
+                                                    ? "bg-amber-600 text-white"
                                                     : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                                }`}
+                                                    }`}
                                             >
                                                 <Activity className="w-4 h-4 inline mr-1" />
                                                 Range Analysis
                                             </button>
-                                            
+
                                             <button
                                                 onClick={() => setActiveTab("snr")}
-                                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                                                    activeTab === "snr" 
-                                                    ? "bg-blue-600 text-white" 
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "snr"
+                                                    ? "bg-blue-600 text-white"
                                                     : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                                }`}
+                                                    }`}
                                             >
                                                 <Signal className="w-4 h-4 inline mr-1" />
                                                 SNR Analysis
                                             </button>
-                                            
+
                                             <button
                                                 onClick={() => setActiveTab("coverage")}
-                                                className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                                                    activeTab === "coverage" 
-                                                    ? "bg-emerald-600 text-white" 
+                                                className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "coverage"
+                                                    ? "bg-emerald-600 text-white"
                                                     : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                                                }`}
+                                                    }`}
                                             >
                                                 <Map className="w-4 h-4 inline mr-1" />
                                                 Coverage Map
@@ -1450,111 +1571,6 @@ const RangeCalculator = () => {
                                                                     gain <span className="text-green-500">+{analysisResults.rangeDelta} meters</span> of range.
                                                                 </p>
                                                             )}
-                                                        </div>
-                                                    </motion.div>
-                                                )}
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Environmental Analysis Section */}
-                                        <div className="col-span-1 lg:col-span-2 bg-gray-900/50 rounded-xl p-5 border border-gray-800">
-                                            <h3 className="text-lg font-medium text-blue-400 flex items-center mb-4">
-                                                <CloudRain className="w-5 h-5 mr-2" />
-                                                <span>Environmental Impact Analysis</span>
-                                            </h3>
-                                            
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                                <div className="bg-gray-800/50 p-3 rounded-lg">
-                                                    <div className="text-sm text-gray-400">Climate Condition</div>
-                                                    <div className="flex items-center mt-1">
-                                                        {climate === "clear" && <Wifi className="w-4 h-4 mr-2 text-green-500" />}
-                                                        {climate === "rain" && <CloudRain className="w-4 h-4 mr-2 text-blue-500" />}
-                                                        {climate === "fog" && <CloudRain className="w-4 h-4 mr-2 text-gray-400" />}
-                                                        {climate === "snow" && <CloudRain className="w-4 h-4 mr-2 text-blue-300" />}
-                                                        {climate === "humid" && <Thermometer className="w-4 h-4 mr-2 text-amber-500" />}
-                                                        <div className="text-xl font-medium capitalize">{climate} Sky</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="bg-gray-800/50 p-3 rounded-lg">
-                                                    <div className="text-sm text-gray-400">Temperature Impact</div>
-                                                    <div className="flex items-center mt-1">
-                                                        <Thermometer className={`w-4 h-4 mr-2 ${
-                                                            temperature < 0 ? 'text-blue-500' : 
-                                                            temperature > 40 ? 'text-red-500' : 'text-green-500'
-                                                        }`} />
-                                                        <div className="text-xl font-medium">{temperature}°C</div>
-                                                    </div>
-                                                </div>
-                                                
-                                                <div className="bg-gray-800/50 p-3 rounded-lg">
-                                                    <div className="text-sm text-gray-400">Signal Quality</div>
-                                                    <div className="flex items-center mt-1">
-                                                        <Signal className={`w-4 h-4 mr-2 ${
-                                                            analysisResults.minSNR > 20 ? 'text-green-500' : 
-                                                            analysisResults.minSNR > 10 ? 'text-amber-500' : 'text-red-500'
-                                                        }`} />
-                                                        <div className="text-xl font-medium">
-                                                            SNR: {analysisResults.maxSNR} to {analysisResults.minSNR} dB
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            
-                                            <div className="mt-4">
-                                                <div
-                                                    className="flex justify-between items-center cursor-pointer p-2 rounded hover:bg-gray-800/50"
-                                                    onClick={() => toggleAccordion("environmentalFactors")}
-                                                >
-                                                    <h4 className="font-medium text-white">Environmental Considerations</h4>
-                                                    {accordionState.environmentalFactors ? (
-                                                        <ChevronUp className="w-4 h-4 text-gray-400" />
-                                                    ) : (
-                                                        <ChevronDown className="w-4 h-4 text-gray-400" />
-                                                    )}
-                                                </div>
-
-                                                {accordionState.environmentalFactors && (
-                                                    <motion.div
-                                                        initial={{ height: 0, opacity: 0 }}
-                                                        animate={{ height: "auto", opacity: 1 }}
-                                                        exit={{ height: 0, opacity: 0 }}
-                                                        transition={{ duration: 0.3 }}
-                                                        className="overflow-hidden"
-                                                    >
-                                                        <div className="p-3 bg-gray-800/30 rounded-lg mt-2 text-sm space-y-2">
-                                                            <p className="text-gray-300">
-                                                                <span className="font-medium text-blue-400">Climate Impact:</span>{" "}
-                                                                {getClimateImpactDescription()}
-                                                            </p>
-                                                            
-                                                            {climate !== "clear" && (
-                                                                <p className="text-gray-300">
-                                                                    <span className="font-medium text-amber-400">Throughput Impact:</span>{" "}
-                                                                    In {climate} conditions, maximum throughput is reduced by approximately {analysisResults.climateThroughputImpact} Mbps.
-                                                                </p>
-                                                            )}
-                                                            
-                                                            <p className="text-gray-300">
-                                                                <span className="font-medium text-green-400">Temperature Considerations:</span>{" "}
-                                                                {temperature < 0 
-                                                                    ? `Cold temperatures (${temperature}°C) may reduce battery life and increase component failures.` 
-                                                                    : temperature > 40 
-                                                                        ? `High temperatures (${temperature}°C) increase thermal noise and reduce component efficiency.`
-                                                                        : `Current temperature (${temperature}°C) is within optimal operating range.`
-                                                                }
-                                                            </p>
-                                                            
-                                                            <p className="text-gray-300">
-                                                                <span className="font-medium text-violet-400">Recommendations:</span>{" "}
-                                                                {getRecommendationForClimate()}
-                                                                {temperature < 0 
-                                                                    ? " Consider thermal enclosures for equipment." 
-                                                                    : temperature > 40 
-                                                                        ? " Provide adequate ventilation or cooling for equipment."
-                                                                        : ""
-                                                                }
-                                                            </p>
                                                         </div>
                                                     </motion.div>
                                                 )}

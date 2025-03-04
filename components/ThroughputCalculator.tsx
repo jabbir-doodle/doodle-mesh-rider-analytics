@@ -5,162 +5,128 @@ import {
   ScatterChart, Scatter, ZAxis, ReferenceLine, AreaChart, Area
 } from "recharts";
 import {
-  Sliders, Wifi, BarChart2, ChevronDown, ChevronUp, RefreshCw, 
+  Sliders, Wifi, BarChart2, ChevronDown, ChevronUp, RefreshCw,
   Info, Zap, Activity, Map, Box, Layers
 } from "lucide-react";
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.05, delayChildren: 0.1 }
-  },
-};
+// Import common components, types and utilities
+import {
+  InputField, DeviceCard, containerVariants, itemVariants, fadeIn, CustomTooltip
+} from "./common/index";
+import {
+  RadioModels, DeviceDetails, ChartDataPoint, SelectOption
+} from "../types/common";
 
-const itemVariants = {
-  hidden: { y: 20, opacity: 0 },
-  visible: {
-    y: 0, opacity: 1,
-    transition: { type: "spring", stiffness: 80 },
-  },
-};
+interface McsTableRow {
+  mcs: number;
+  modulation: string;
+  coding: number;
+  dataRate: string;
+  range: number;
+  throughput: number;
+  snr: string;
+  fresnelClearance: number;
+}
 
-const fadeIn = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.4 } },
-};
+const ThroughputCalculator: React.FC = () => {
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string>("2L");
+  const [frequency, setFrequency] = useState<number>(2450);
+  const [bandwidth, setBandwidth] = useState<string>("20");
+  const [antennas, setAntennas] = useState<string>("2");
+  const [streams, setStreams] = useState<string>("2");
+  const [udpPayload, setUdpPayload] = useState<number>(1500);
+  const [antennaGain, setAntennaGain] = useState<number>(6);
+  const [fadeMargin, setFadeMargin] = useState<number>(10);
+  const [fresnelClearance, setFresnelClearance] = useState<number>(60);
+  const [isOverGround, setIsOverGround] = useState<boolean>(false);
+  const [powerLimit, setPowerLimit] = useState<number>(30);
+  const [framesAggregated, setFramesAggregated] = useState<number>(10);
+  const [calculationComplete, setCalculationComplete] = useState<boolean>(false);
+  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
+  const [isCalculating, setIsCalculating] = useState<boolean>(false);
+  const [snrData, setSnrData] = useState<any[]>([]);
+  const [pathLossModel, setPathLossModel] = useState<string>("free");
+  const [activeTab, setActiveTab] = useState<string>("throughput");
+  const [mcsTable, setMcsTable] = useState<McsTableRow[]>([]);
+  const [climate, setClimate] = useState<string>("clear");
+  const [temperature, setTemperature] = useState<number>(25);
+  const [multiPathFading, setMultiPathFading] = useState<boolean>(false);
+  const [fadingIntensity, setFadingIntensity] = useState<number>(3);
 
-const InputField = ({
-  label, id, value, onChange, type = "text", min, max,
-  options, disabled, className = ""
-}) => (
-  <div className={`relative ${className}`}>
-    <label htmlFor={id} className="block text-xs font-medium text-gray-300 mb-1">
-      {label}
-    </label>
-    {type === "select" ? (
-      <select
-        id={id} value={value} onChange={onChange} disabled={disabled}
-        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-      >
-        {options?.map(option => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    ) : (
-      <input
-        type={type} id={id} value={value} onChange={onChange} min={min} max={max}
-        className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-      />
-    )}
-  </div>
-);
+  const chartRef = useRef<HTMLDivElement>(null);
 
-const DeviceCard = ({ deviceKey, device, isSelected, onClick }) => {
-  const getDeviceColor = (key) => {
-    const colors = {
-      "1L": "blue", "2L": "violet", "2KO": "amber", "2KW": "emerald"
-    };
-    return colors[key] || "violet";
-  };
-  
-  const color = getDeviceColor(deviceKey);
-
-  return (
-    <motion.div
-      whileHover={{ y: -5, transition: { duration: 0.2 } }}
-      whileTap={{ scale: 0.98 }}
-      onClick={onClick}
-      className={`bg-gray-800 hover:bg-gray-750 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer h-full ${
-        isSelected ? `ring-2 ring-${color}-500 shadow-lg shadow-${color}-500/20` : "ring-1 ring-gray-700"
-      }`}
-    >
-      <div className="p-4 flex flex-col items-center h-full">
-        <div className={`w-full h-20 flex items-center justify-center mb-4 rounded-lg ${
-          isSelected ? `bg-${color}-950/30` : 'bg-gray-900/30'
-        }`}>
-          <img src={device.image} alt={device.name} className="h-16 w-auto object-contain" />
-        </div>
-        <div className="text-center">
-          <h3 className={`font-medium ${isSelected ? `text-${color}-400` : 'text-gray-200'}`}>
-            {device.name}
-          </h3>
-          {isSelected && (
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-${color}-500/20 text-${color}-400 mt-1`}>
-              Selected
-            </span>
-          )}
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-
-const ThroughputCalculator = () => {
-  const [chartData, setChartData] = useState([]);
-  const [selectedDevice, setSelectedDevice] = useState("2L");
-  const [frequency, setFrequency] = useState(2450);
-  const [bandwidth, setBandwidth] = useState("20");
-  const [antennas, setAntennas] = useState("2");
-  const [streams, setStreams] = useState("2");
-  const [udpPayload, setUdpPayload] = useState(1500);
-  const [antennaGain, setAntennaGain] = useState(6);
-  const [fadeMargin, setFadeMargin] = useState(10);
-  const [fresnelClearance, setFresnelClearance] = useState(60);
-  const [isOverGround, setIsOverGround] = useState(false);
-  const [powerLimit, setPowerLimit] = useState(30);
-  const [framesAggregated, setFramesAggregated] = useState(10);
-  const [calculationComplete, setCalculationComplete] = useState(false);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [isCalculating, setIsCalculating] = useState(false);
-  const [snrData, setSnrData] = useState([]);
-  const [pathLossModel, setPathLossModel] = useState("free");
-  const [activeTab, setActiveTab] = useState("throughput");
-  const [mcsTable, setMcsTable] = useState([]);
-  const [climate, setClimate] = useState("clear");
-  const [temperature, setTemperature] = useState(25);
-  
-  const chartRef = useRef(null);
-
-  const radioModels = {
+  const radioModels: RadioModels = {
     "1L": {
       power: [24, 23, 23, 23, 22, 21, 20, 18],
       sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
       modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-      codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+      codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
       bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
     },
     "2L": {
       power: [27, 26, 26, 26, 25, 24, 23, 21],
       sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
       modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-      codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+      codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
       bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
     },
     "2KO": {
       power: [30, 29, 29, 29, 28, 27, 26, 24],
       sensitivity: [-89, -87, -85, -83, -79, -75, -73, -71],
       modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-      codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+      codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
       bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
     },
     "2KW": {
       power: [27, 26, 26, 26, 25, 24, 23, 21],
       sensitivity: [-87, -85, -83, -81, -77, -73, -71, -69],
       modulation: ["BPSK", "QPSK", "QPSK", "16-QAM", "16-QAM", "64-QAM", "64-QAM", "64-QAM"],
-      codingRate: [1/2, 1/2, 3/4, 1/2, 3/4, 2/3, 3/4, 5/6],
+      codingRate: [1 / 2, 1 / 2, 3 / 4, 1 / 2, 3 / 4, 2 / 3, 3 / 4, 5 / 6],
       bitsPerSymbol: [1, 2, 2, 4, 4, 6, 6, 6],
     },
   };
 
-  const deviceDetails = {
+  const deviceDetails: DeviceDetails = {
     "1L": { name: "Nano-OEM", image: "/nano.png" },
     "2L": { name: "Mini-OEM", image: "/mini.png" },
     "2KO": { name: "OEM (V2)", image: "/oem.png" },
     "2KW": { name: "Wearable (V2)", image: "/wear.png" }
   };
+
+  const bandwidthOptions: SelectOption[] = [
+    { value: "3", label: "3 MHz" },
+    { value: "5", label: "5 MHz" },
+    { value: "10", label: "10 MHz" },
+    { value: "15", label: "15 MHz" },
+    { value: "20", label: "20 MHz" },
+    { value: "40", label: "40 MHz" }
+  ];
+
+  const antennasOptions: SelectOption[] = [
+    { value: "1", label: "1" },
+    { value: "2", label: "2" }
+  ];
+
+  const streamsOptions: SelectOption[] = [
+    { value: "1", label: "1" },
+    { value: "2", label: "2" }
+  ];
+
+  const pathLossModelOptions: SelectOption[] = [
+    { value: "free", label: "Free Space" },
+    { value: "ground", label: "2-Ray Ground" },
+    { value: "urban", label: "Urban" },
+    { value: "suburban", label: "Suburban" }
+  ];
+
+  const climateOptions: SelectOption[] = [
+    { value: "clear", label: "Clear Sky" },
+    { value: "rain", label: "Rain" },
+    { value: "fog", label: "Fog" },
+    { value: "snow", label: "Snow" },
+    { value: "humid", label: "High Humidity" }
+  ];
 
   useEffect(() => {
     if (selectedDevice === "1L") {
@@ -168,29 +134,43 @@ const ThroughputCalculator = () => {
       setStreams("1");
       if (powerLimit > 30) setPowerLimit(30);
     }
-  }, [selectedDevice]);
+  }, [selectedDevice, powerLimit]);
 
-  const calculatePathLoss = (distance, freq) => {
+  const calculatePathLoss = (distance: number, freq: number): number => {
     const freqGHz = freq / 1000;
     let baseLoss = 0;
-    
+
     if (pathLossModel === "free") {
       baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45;
     } else if (pathLossModel === "ground") {
       const h1 = 2; // Tx height in meters
       const h2 = 2; // Rx height in meters
-      baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 - 
-                20 * Math.log10(h1*h2) + 10;
+      baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 -
+        20 * Math.log10(h1 * h2) + 10;
     } else if (pathLossModel === "urban") {
-      baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 + 
-                (distance < 500 ? 0 : 20);
+      // Simplified COST-Hata model for urban areas
+      baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 +
+        (distance < 500 ? 0 : 20) + (freqGHz > 2 ? 3 : 0);
+    } else if (pathLossModel === "suburban") {
+      // Simplified model for suburban areas with less obstruction
+      baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45 +
+        (distance < 500 ? 0 : 15);
     } else {
       baseLoss = 20 * Math.log10(distance) + 20 * Math.log10(freqGHz) + 92.45;
     }
-    
+
+    // Apply multipath fading if enabled
+    // Uses Rayleigh fading model (simplified)
+    if (multiPathFading) {
+      // Rayleigh fading varies with distance and frequency
+      // Higher intensity = more fading variation
+      const fadingFactor = (Math.sin(distance * 0.3) + Math.cos(freqGHz * 2)) * fadingIntensity;
+      baseLoss += fadingFactor;
+    }
+
     // Apply climate attenuation factors
     let climateAttenuation = 0;
-    
+
     switch (climate) {
       case "rain":
         // ITU-R P.838-3 model (simplified)
@@ -215,7 +195,7 @@ const ThroughputCalculator = () => {
       default:
         climateAttenuation = 0;
     }
-    
+
     // Temperature effects on electronics (simplified)
     // Extreme temperatures can degrade radio performance
     let temperatureEffect = 0;
@@ -224,7 +204,7 @@ const ThroughputCalculator = () => {
     } else if (temperature > 40) {
       temperatureEffect = (temperature - 40) * 0.1; // Heat degrades performance more rapidly
     }
-    
+
     return baseLoss + climateAttenuation + temperatureEffect;
   };
 
@@ -273,74 +253,74 @@ const ThroughputCalculator = () => {
       if (isOverGround) {
         freqCorrection = Math.round(
           10000 * (-0.0000000000313 * Math.pow(freq, 3) +
-                  0.0000004618 * Math.pow(freq, 2) -
-                  0.0024096 * freq + 5.8421)
+            0.0000004618 * Math.pow(freq, 2) -
+            0.0024096 * freq + 5.8421)
         ) / 10000;
         if (ampduVal > 2) ampduVal = 2;
       }
 
       // Arrays for per-MCS level calculations
-      const mcsIndex = [];
-      const linkSpeed = [];
-      const basicSpeed = [];
-      const maxFrames = [];
-      const phyTimeArr = [];
-      const rangeArr = [];
-      const snrArr = [];
-      const tptMax = [];
-      const fresnelClearanceDistance = [];
-      const mcsTableData = [];
+      const mcsIndex: number[] = [];
+      const linkSpeed: number[] = [];
+      const basicSpeed: number[] = [];
+      const maxFrames: number[] = [];
+      const phyTimeArr: number[] = [];
+      const rangeArr: number[] = [];
+      const snrArr: number[] = [];
+      const tptMax: number[] = [];
+      const fresnelClearanceDistance: number[] = [];
+      const mcsTableData: McsTableRow[] = [];
 
       for (let i = 0; i < 8; i++) {
         // Apply power limit
         powerArr[i] = Math.min(powerArr[i], pwrLimit - 3);
-        
+
         // Adjust sensitivity based on antennas and bandwidth
-        sensitivityArr[i] = sensitivityArr[i] - 10 * Math.log10(ant / effectiveStreams) - 
-                            10 * Math.log10(20 / bwNum);
-        
+        sensitivityArr[i] = sensitivityArr[i] - 10 * Math.log10(ant / effectiveStreams) -
+          10 * Math.log10(20 / bwNum);
+
         // Calculate MCS index
         mcsIndex[i] = i + (effectiveStreams - 1) * 8;
-        
+
         // Calculate link speed
         linkSpeed[i] = bitsPerSymbol[i] * codingRate[i] * effectiveStreams * giRate * bwNum / 20;
-        
+
         // Calculate basic rate
         basicSpeed[i] = basicRate * (bwNum / 20) * bitsPerSymbol[i] * Math.min(codingRate[i], 0.75);
-        
+
         // Determine maximum frames
         maxFrames[i] = Math.max(Math.min(txop / ((payload * 8) / linkSpeed[i]), ampduVal), 1);
-        
+
         // Calculate PHY data transmission time
-        phyTimeArr[i] = (ampduVal - 1) * mpduDelimiter + 
-                        Math.ceil((payload * maxFrames[i] * 8 / linkSpeed[i]) / 4) * 4;
-        
+        phyTimeArr[i] = (ampduVal - 1) * mpduDelimiter +
+          Math.ceil((payload * maxFrames[i] * 8 / linkSpeed[i]) / 4) * 4;
+
         // Compute range (m)
         const rangeCalc = Math.pow(
           10, (powerArr[i] - sensitivityArr[i] - fade + gain) / (20 + freqCorrection)
         ) * 300 / (freq * 4 * Math.PI);
-        
+
         rangeArr[i] = parseFloat(rangeCalc.toFixed(1));
-        
+
         // Calculate SNR based on path loss
         const pathLoss = calculatePathLoss(rangeArr[i], freq);
         const receivedPower = powerArr[i] + gain - pathLoss;
         const noiseFloor = -174 + 10 * Math.log10(bwNum * 1e6);
         snrArr[i] = receivedPower - noiseFloor;
-        
+
         // Calculate throughput
-        const timeTotal = phyTimeArr[i] + phyOverhead + 
-                          (sifs + (phyHeader11n + effectiveStreams * ltf) + 
-                          Math.ceil((32 * 8) / (basicSpeed[i] * (bwNum / 20)))) + 
-                          (1000 * 4 * rangeArr[i]) / 300;
-        
+        const timeTotal = phyTimeArr[i] + phyOverhead +
+          (sifs + (phyHeader11n + effectiveStreams * ltf) +
+            Math.ceil((32 * 8) / (basicSpeed[i] * (bwNum / 20)))) +
+          (1000 * 4 * rangeArr[i]) / 300;
+
         tptMax[i] = parseFloat((maxFrames[i] * udpVal * 8 / timeTotal * 0.9).toFixed(1));
-        
+
         // Fresnel Zone Clearance
         fresnelClearanceDistance[i] = parseFloat(
           (8.66 * Math.sqrt(rangeArr[i] / freq) * fresnelPct / 100).toFixed(1)
         );
-        
+
         // MCS Table Data
         mcsTableData.push({
           mcs: mcsIndex[i],
@@ -396,7 +376,7 @@ const ThroughputCalculator = () => {
             <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-900' : 'bg-gray-850'}>
               <td className="px-4 py-2 text-sm">{row.mcs}</td>
               <td className="px-4 py-2 text-sm">{row.modulation}</td>
-              <td className="px-4 py-2 text-sm">{row.coding}</td>
+              <td className="px-4 py-2 text-sm">{row.coding.toFixed(3)}</td>
               <td className="px-4 py-2 text-sm">{row.dataRate}</td>
               <td className="px-4 py-2 text-sm">{row.range}</td>
               <td className="px-4 py-2 text-sm">{row.throughput}</td>
@@ -557,13 +537,14 @@ const ThroughputCalculator = () => {
 
   const renderCoverageMap = () => (
     <div className="h-80">
+      <p className="text-sm text-gray-400 mb-2 italic">A top-down view showing signal propagation and throughput in all directions from the transmitter (center).</p>
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart
           margin={{ top: 10, right: 30, left: 0, bottom: 10 }}
         >
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-          <XAxis type="number" dataKey="x" name="distance (m)" stroke="#94a3b8" tick={{ fill: "#94a3b8" }} domain={[-chartData[chartData.length-1]?.distance || -1000, chartData[chartData.length-1]?.distance || 1000]} />
-          <YAxis type="number" dataKey="y" name="distance (m)" stroke="#94a3b8" tick={{ fill: "#94a3b8" }} domain={[-chartData[chartData.length-1]?.distance || -1000, chartData[chartData.length-1]?.distance || 1000]} />
+          <XAxis type="number" dataKey="x" name="distance (m)" stroke="#94a3b8" tick={{ fill: "#94a3b8" }} domain={[-chartData[chartData.length - 1]?.distance || -1000, chartData[chartData.length - 1]?.distance || 1000]} />
+          <YAxis type="number" dataKey="y" name="distance (m)" stroke="#94a3b8" tick={{ fill: "#94a3b8" }} domain={[-chartData[chartData.length - 1]?.distance || -1000, chartData[chartData.length - 1]?.distance || 1000]} />
           <ZAxis type="number" range={[50, 400]} />
           <Tooltip cursor={{ strokeDasharray: '3 3' }} />
           <Legend />
@@ -578,12 +559,12 @@ const ThroughputCalculator = () => {
               });
             }
             return (
-              <Scatter 
+              <Scatter
                 key={index}
-                name={`${point.throughput} Mbps`} 
-                data={circles} 
-                fill={`hsl(${200 - point.throughput * 1.5}, 100%, 50%)`} 
-                shape="circle" 
+                name={`${point.throughput} Mbps`}
+                data={circles}
+                fill={`hsl(${200 - point.throughput * 1.5}, 100%, 50%)`}
+                shape="circle"
               />
             );
           })}
@@ -605,6 +586,70 @@ const ThroughputCalculator = () => {
       default:
         return renderThroughputChart();
     }
+  };
+
+  const handleFrequencyChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFrequency(parseInt(e.target.value));
+  };
+
+  const handleBandwidthChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setBandwidth(e.target.value);
+  };
+
+  const handleAntennasChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setAntennas(e.target.value);
+  };
+
+  const handleStreamsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setStreams(e.target.value);
+  };
+
+  const handleUdpPayloadChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setUdpPayload(parseInt(e.target.value));
+  };
+
+  const handleAntennaGainChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setAntennaGain(parseInt(e.target.value));
+  };
+
+  const handleFadeMarginChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFadeMargin(parseInt(e.target.value));
+  };
+
+  const handleFresnelClearanceChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFresnelClearance(parseInt(e.target.value));
+  };
+
+  const handleOverGroundChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setIsOverGround((e.target as HTMLInputElement).checked);
+  };
+
+  const handlePowerLimitChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setPowerLimit(parseInt(e.target.value));
+  };
+
+  const handleFramesAggregatedChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFramesAggregated(parseInt(e.target.value));
+  };
+
+  const handlePathLossModelChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setPathLossModel(e.target.value);
+  };
+
+  const handleClimateChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setClimate(e.target.value);
+  };
+
+  const handleTemperatureChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setTemperature(parseInt(e.target.value));
+  };
+
+  const handleMultiPathFadingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setMultiPathFading((e.target as HTMLInputElement).checked);
+  };
+
+  const handleFadingIntensityChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setFadingIntensity(parseInt(e.target.value));
   };
 
   return (
@@ -685,7 +730,7 @@ const ThroughputCalculator = () => {
                   label="Frequency (MHz)"
                   id="frequency"
                   value={frequency}
-                  onChange={(e) => setFrequency(parseInt(e.target.value))}
+                  onChange={handleFrequencyChange}
                   type="number"
                   min="1000"
                   max="6000"
@@ -695,23 +740,16 @@ const ThroughputCalculator = () => {
                   label="Bandwidth (MHz)"
                   id="bandwidth"
                   value={bandwidth}
-                  onChange={(e) => setBandwidth(e.target.value)}
+                  onChange={handleBandwidthChange}
                   type="select"
-                  options={[
-                    { value: "3", label: "3 MHz" },
-                    { value: "5", label: "5 MHz" },
-                    { value: "10", label: "10 MHz" },
-                    { value: "15", label: "15 MHz" },
-                    { value: "20", label: "20 MHz" },
-                    { value: "40", label: "40 MHz" }
-                  ]}
+                  options={bandwidthOptions}
                 />
 
                 <InputField
                   label="UDP Payload (bytes)"
                   id="udpPayload"
                   value={udpPayload}
-                  onChange={(e) => setUdpPayload(parseInt(e.target.value))}
+                  onChange={handleUdpPayloadChange}
                   type="number"
                   min="10"
                   max="1500"
@@ -733,12 +771,9 @@ const ThroughputCalculator = () => {
                           label="Antennas"
                           id="antennas"
                           value={antennas}
-                          onChange={(e) => setAntennas(e.target.value)}
+                          onChange={handleAntennasChange}
                           type="select"
-                          options={[
-                            { value: "1", label: "1" },
-                            { value: "2", label: "2" }
-                          ]}
+                          options={antennasOptions}
                           disabled={selectedDevice === "1L"}
                         />
 
@@ -746,12 +781,9 @@ const ThroughputCalculator = () => {
                           label="Data Streams"
                           id="streams"
                           value={streams}
-                          onChange={(e) => setStreams(e.target.value)}
+                          onChange={handleStreamsChange}
                           type="select"
-                          options={[
-                            { value: "1", label: "1" },
-                            { value: "2", label: "2" }
-                          ]}
+                          options={streamsOptions}
                           disabled={selectedDevice === "1L"}
                         />
 
@@ -759,7 +791,7 @@ const ThroughputCalculator = () => {
                           label="Antenna Gain (dBi)"
                           id="antennaGain"
                           value={antennaGain}
-                          onChange={(e) => setAntennaGain(parseInt(e.target.value))}
+                          onChange={handleAntennaGainChange}
                           type="number"
                           min="0"
                           max="100"
@@ -769,7 +801,7 @@ const ThroughputCalculator = () => {
                           label="Fade Margin (dB)"
                           id="fadeMargin"
                           value={fadeMargin}
-                          onChange={(e) => setFadeMargin(parseInt(e.target.value))}
+                          onChange={handleFadeMarginChange}
                           type="number"
                           min="0"
                           max="30"
@@ -779,7 +811,7 @@ const ThroughputCalculator = () => {
                           label="Fresnel Clearance (%)"
                           id="fresnelClearance"
                           value={fresnelClearance}
-                          onChange={(e) => setFresnelClearance(parseInt(e.target.value))}
+                          onChange={handleFresnelClearanceChange}
                           type="number"
                           min="0"
                           max="100"
@@ -789,7 +821,7 @@ const ThroughputCalculator = () => {
                           label="Power Limit (dBm)"
                           id="powerLimit"
                           value={powerLimit}
-                          onChange={(e) => setPowerLimit(parseInt(e.target.value))}
+                          onChange={handlePowerLimitChange}
                           type="number"
                           min="0"
                           max={selectedDevice === "1L" ? "30" : "36"}
@@ -799,65 +831,85 @@ const ThroughputCalculator = () => {
                           label="Frames Aggregated"
                           id="framesAggregated"
                           value={framesAggregated}
-                          onChange={(e) => setFramesAggregated(parseInt(e.target.value))}
+                          onChange={handleFramesAggregatedChange}
                           type="number"
                           min="1"
                           max="32"
                         />
-                        
+
                         <InputField
                           label="Path Loss Model"
                           id="pathLossModel"
                           value={pathLossModel}
-                          onChange={(e) => setPathLossModel(e.target.value)}
+                          onChange={handlePathLossModelChange}
                           type="select"
-                          options={[
-                            { value: "free", label: "Free Space" },
-                            { value: "ground", label: "2-Ray Ground" },
-                            { value: "urban", label: "Urban" }
-                          ]}
+                          options={pathLossModelOptions}
                         />
-                        
+
                         <InputField
                           label="Climate Condition"
                           id="climate"
                           value={climate}
-                          onChange={(e) => setClimate(e.target.value)}
+                          onChange={handleClimateChange}
                           type="select"
-                          options={[
-                            { value: "clear", label: "Clear Sky" },
-                            { value: "rain", label: "Rain" },
-                            { value: "fog", label: "Fog" },
-                            { value: "snow", label: "Snow" },
-                            { value: "humid", label: "High Humidity" }
-                          ]}
+                          options={climateOptions}
                         />
-                        
+
                         <InputField
                           label="Ambient Temperature (°C)"
                           id="temperature"
                           value={temperature}
-                          onChange={(e) => setTemperature(parseInt(e.target.value))}
+                          onChange={handleTemperatureChange}
                           type="number"
                           min="-20"
                           max="50"
                         />
-                        
-                        <div className="flex items-center">
-                          <input
-                            type="checkbox"
-                            id="isOverGround"
-                            checked={isOverGround}
-                            onChange={(e) => setIsOverGround(e.target.checked)}
-                            className="h-4 w-4 text-violet-500 focus:ring-violet-500 border-gray-700 rounded"
-                          />
-                          <label
-                            htmlFor="isOverGround"
-                            className="ml-2 text-sm text-gray-300"
-                          >
-                            Ground Level Link
-                          </label>
+
+                        <div className="flex flex-col space-y-2">
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="isOverGround"
+                              checked={isOverGround}
+                              onChange={handleOverGroundChange}
+                              className="h-4 w-4 text-violet-500 focus:ring-violet-500 border-gray-700 rounded"
+                            />
+                            <label
+                              htmlFor="isOverGround"
+                              className="ml-2 text-sm text-gray-300"
+                            >
+                              Ground Level Link
+                            </label>
+                          </div>
+
+                          <div className="flex items-center">
+                            <input
+                              type="checkbox"
+                              id="multiPathFading"
+                              checked={multiPathFading}
+                              onChange={handleMultiPathFadingChange}
+                              className="h-4 w-4 text-violet-500 focus:ring-violet-500 border-gray-700 rounded"
+                            />
+                            <label
+                              htmlFor="multiPathFading"
+                              className="ml-2 text-sm text-gray-300"
+                            >
+                              Enable Multi-Path Fading
+                            </label>
+                          </div>
                         </div>
+
+                        {multiPathFading && (
+                          <InputField
+                            label="Fading Intensity (1-10)"
+                            id="fadingIntensity"
+                            value={fadingIntensity}
+                            onChange={handleFadingIntensityChange}
+                            type="number"
+                            min="1"
+                            max="10"
+                          />
+                        )}
                       </div>
                     </div>
                   </motion.div>
@@ -901,51 +953,47 @@ const ThroughputCalculator = () => {
                   <Wifi className="w-5 h-5 mr-2 text-emerald-400" />
                   <span>RF Performance Analysis</span>
                 </h2>
-                
+
                 <div className="flex space-x-2 mt-4">
                   <button
                     onClick={() => setActiveTab("throughput")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      activeTab === "throughput" 
-                        ? "bg-violet-600 text-white" 
-                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "throughput"
+                      ? "bg-violet-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      }`}
                   >
                     <BarChart2 className="w-4 h-4 inline mr-1" />
                     Throughput
                   </button>
-                  
+
                   <button
                     onClick={() => setActiveTab("snr")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      activeTab === "snr" 
-                        ? "bg-blue-600 text-white" 
-                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "snr"
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      }`}
                   >
                     <Activity className="w-4 h-4 inline mr-1" />
                     SNR Analysis
                   </button>
-                  
+
                   <button
                     onClick={() => setActiveTab("coverage")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      activeTab === "coverage" 
-                        ? "bg-emerald-600 text-white" 
-                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "coverage"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      }`}
                   >
                     <Map className="w-4 h-4 inline mr-1" />
                     Coverage Map
                   </button>
-                  
+
                   <button
                     onClick={() => setActiveTab("mcs")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                      activeTab === "mcs" 
-                        ? "bg-amber-600 text-white" 
-                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"
-                    }`}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "mcs"
+                      ? "bg-amber-600 text-white"
+                      : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                      }`}
                   >
                     <Layers className="w-4 h-4 inline mr-1" />
                     MCS Details
@@ -969,7 +1017,7 @@ const ThroughputCalculator = () => {
                         <div>
                           <span className="font-medium text-amber-400">Throughput Performance</span>
                           <p className="text-sm text-gray-400 mt-1">
-                            Maximum throughput reaches {chartData[0]?.throughput} Mbps at close range and decreases to {chartData[chartData.length-1]?.throughput} Mbps at {chartData[chartData.length-1]?.distance}m.
+                            Maximum throughput reaches {chartData[0]?.throughput} Mbps at close range and decreases to {chartData[chartData.length - 1]?.throughput} Mbps at {chartData[chartData.length - 1]?.distance}m.
                           </p>
                         </div>
                       </div>
@@ -979,22 +1027,26 @@ const ThroughputCalculator = () => {
                         <div>
                           <span className="font-medium text-emerald-400">Fresnel Zone Clearance</span>
                           <p className="text-sm text-gray-400 mt-1">
-                            At maximum distance, maintain a clearance zone of {chartData[chartData.length-1]?.fresnelClearance}m for optimal signal propagation.
+                            At maximum distance, maintain a clearance zone of {chartData[chartData.length - 1]?.fresnelClearance}m for optimal signal propagation.
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-start">
                         <div className="h-5 w-1 bg-red-500 rounded-full mr-3 mt-1"></div>
                         <div>
-                          <span className="font-medium text-red-400">Climate Impact</span>
+                          <span className="font-medium text-red-400">Climate & Environment Impact</span>
                           <p className="text-sm text-gray-400 mt-1">
-                            {climate === "clear" 
-                              ? "Clear sky conditions provide optimal signal propagation." 
-                              : `${climate.charAt(0).toUpperCase() + climate.slice(1)} conditions cause signal attenuation of approximately ${(0.01 * Math.pow(frequency/1000, 1.6) * chartData[chartData.length-1]?.distance / 1000).toFixed(2)} dB at maximum range.`
+                            {climate === "clear"
+                              ? "Clear sky conditions provide optimal signal propagation."
+                              : `${climate.charAt(0).toUpperCase() + climate.slice(1)} conditions cause signal attenuation of approximately ${(0.01 * Math.pow(frequency / 1000, 1.6) * chartData[chartData.length - 1]?.distance / 1000).toFixed(2)} dB at maximum range.`
                             }
-                            {Math.abs(temperature - 25) > 15 
-                              ? ` Temperature of ${temperature}°C also ${temperature < 0 ? "reduces throughput due to component limitations" : "degrades signal quality due to thermal noise increase"}.` 
+                            {Math.abs(temperature - 25) > 15
+                              ? ` Temperature of ${temperature}°C also ${temperature < 0 ? "reduces throughput due to component limitations" : "degrades signal quality due to thermal noise increase"}.`
+                              : ""
+                            }
+                            {multiPathFading
+                              ? ` Multi-path fading (intensity: ${fadingIntensity}) causes signal variations of ±${fadingIntensity.toFixed(1)} dB, resulting in less predictable performance.`
                               : ""
                             }
                           </p>
@@ -1023,22 +1075,22 @@ const ThroughputCalculator = () => {
                           </p>
                         </div>
                       </div>
-                      
+
                       <div className="flex items-start">
                         <div className="h-5 w-1 bg-amber-500 rounded-full mr-3 mt-1"></div>
                         <div>
                           <span className="font-medium text-amber-400">Environmental Recommendations</span>
                           <p className="text-sm text-gray-400 mt-1">
-                            {climate !== "clear" 
-                              ? `For ${climate} conditions, consider ${climate === "rain" || climate === "snow" 
-                                  ? "weatherproof enclosures and increased fade margin" 
-                                  : climate === "fog" 
-                                  ? "lower frequency operation if possible" 
+                            {climate !== "clear"
+                              ? `For ${climate} conditions, consider ${climate === "rain" || climate === "snow"
+                                ? "weatherproof enclosures and increased fade margin"
+                                : climate === "fog"
+                                  ? "lower frequency operation if possible"
                                   : "additional antenna gain to overcome attenuation"}.`
                               : "Standard installation practices are sufficient for current environmental conditions."
                             }
-                            {Math.abs(temperature - 25) > 15 
-                              ? ` Equipment may require ${temperature < 0 ? "heating elements" : "additional cooling"} at ${temperature}°C.` 
+                            {Math.abs(temperature - 25) > 15
+                              ? ` Equipment may require ${temperature < 0 ? "heating elements" : "additional cooling"} at ${temperature}°C.`
                               : ""
                             }
                           </p>
@@ -1052,7 +1104,7 @@ const ThroughputCalculator = () => {
           )}
 
           <motion.div variants={itemVariants} className="text-center text-xs text-gray-500 mt-8">
-            <p>Mesh Rider RF Analysis Tool | v2.0</p>
+            <p>Mesh Rider Analysis Tool</p>
             <p className="mt-1">
               Results are theoretical and may vary based on environmental conditions and interference.
             </p>

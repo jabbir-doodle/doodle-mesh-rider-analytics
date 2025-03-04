@@ -1,6 +1,14 @@
-import React, { FC } from 'react';
+// components/common/index.tsx
+import React from 'react';
 import { motion } from 'framer-motion';
-import { DeviceDetail, InputFieldProps, DeviceCardProps, McsRangeItemProps, getDeviceColor } from '../../types/common';
+import {
+    DeviceDetail,
+    InputFieldProps,
+    DeviceCardProps,
+    McsRangeItemProps,
+    getDeviceColor,
+    CustomTooltipProps
+} from '../../types/common';
 
 export const containerVariants = {
     hidden: { opacity: 0 },
@@ -27,8 +35,7 @@ export const fadeIn = {
     visible: { opacity: 1, transition: { duration: 0.4 } },
 };
 
-// Fix for InputField component in components/common/index.tsx
-export const InputField: FC<InputFieldProps> = ({
+export const InputField: React.FC<InputFieldProps> = ({
     label,
     id,
     value,
@@ -36,10 +43,10 @@ export const InputField: FC<InputFieldProps> = ({
     type = "text",
     min,
     max,
-    step,  // Add this parameter
+    step,
     options,
     disabled,
-    checked,  // Add this parameter
+    checked,
     className = ""
 }) => (
     <div className={`relative ${className}`}>
@@ -79,14 +86,14 @@ export const InputField: FC<InputFieldProps> = ({
                 onChange={onChange}
                 min={min}
                 max={max}
-                step={step}  // Add this line
+                step={step}
                 className="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
             />
         )}
     </div>
 );
 
-export const DeviceCard: FC<DeviceCardProps> = ({ deviceKey, device, isSelected, onClick }) => {
+export const DeviceCard: React.FC<DeviceCardProps> = ({ deviceKey, device, isSelected, onClick }) => {
     const color = getDeviceColor(deviceKey);
 
     return (
@@ -122,7 +129,7 @@ export const DeviceCard: FC<DeviceCardProps> = ({ deviceKey, device, isSelected,
     );
 };
 
-export const McsRangeItem: FC<McsRangeItemProps> = ({ result }) => {
+export const McsRangeItem: React.FC<McsRangeItemProps> = ({ result }) => {
     const textClass = result.withinThroughput ? "text-green-500" : "text-red-500";
     const clearanceClass = result.withinClearance ? "text-green-500" : "text-red-500";
 
@@ -142,4 +149,24 @@ export const McsRangeItem: FC<McsRangeItemProps> = ({ result }) => {
             </div>
         </div>
     );
+};
+
+export const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-gray-900 p-3 border border-gray-700 rounded-lg shadow-xl">
+                <p className="font-medium text-white mb-1">Distance: {label} meters</p>
+                <p className="text-amber-400 text-sm">
+                    <span className="inline-block w-3 h-3 bg-amber-400 rounded-full mr-2"></span>
+                    Throughput: {payload[0].value} Mbps
+                </p>
+                <p className="text-emerald-400 text-sm">
+                    <span className="inline-block w-3 h-3 bg-emerald-400 rounded-full mr-2"></span>
+                    Fresnel Zone: {payload[1].value} meters
+                </p>
+                <p className="text-gray-300 text-sm mt-1">MCS: {payload[0].payload.mcs}</p>
+            </div>
+        );
+    }
+    return null;
 };
