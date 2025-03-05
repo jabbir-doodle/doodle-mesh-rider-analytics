@@ -597,7 +597,7 @@ const StationDetails: React.FC<StationDetailsProps> = ({
                 </div>
                 <div>
                   <div className="text-2xl font-bold text-yellow-400">
-                    {station.pl_ratio.toFixed(2)}
+                  {(station.pl_ratio !== undefined ? station.pl_ratio : 0).toFixed(2)}
                   </div>
                 </div>
                 <div className="text-xs text-gray-300">Click to show graph</div>

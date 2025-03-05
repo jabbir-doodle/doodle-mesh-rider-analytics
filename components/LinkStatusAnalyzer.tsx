@@ -76,14 +76,22 @@ export default function LinkStatusAnalyzer({ initialData }: LinkStatusAnalyzerPr
     return logData
       .map((entry) => {
         const stationData = entry.stations.find((s) => s.mac === mac);
-        return stationData ? {
-          timestamp: entry.timestamp,
-          ...stationData,
-          inactive: stationData.inactive || 0  // Ensure inactive time is included
-        } : null;
+        return stationData
+          ? {
+            timestamp: entry.timestamp,
+            ...stationData,
+            rssi: stationData.rssi !== undefined ? stationData.rssi : 0,
+            rssi_ant: Array.isArray(stationData.rssi_ant)
+              ? stationData.rssi_ant.map((ant) => ant !== undefined ? ant : 0)
+              : [0, 0],
+            pl_ratio: stationData.pl_ratio !== undefined ? stationData.pl_ratio : 0,
+            inactive: stationData.inactive !== undefined ? stationData.inactive : 0,
+          }
+          : null;
       })
       .filter((data) => data !== null);
   };
+
   if (logData.length === 0) {
     return (
       <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6">
