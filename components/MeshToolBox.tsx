@@ -8,6 +8,8 @@ import ParticleBackground from './ParticleBackground';
 import LinkStatusAnalyzer from './LinkStatusAnalyzer';
 import ThemeToggle from './ThemeToggle';
 import MeshRiderApp from './MeshRiderApp';
+import ApiDocumentation from './Apidoc';
+import FirmwareUpdateTool from './FirmwareUpdateTool'; // Reference to separate component
 import { useTheme } from './ThemeProvider';
 import { motion } from 'framer-motion';
 
@@ -45,7 +47,6 @@ const MeshToolbox: FC = () => {
         setAnimateCards(true);
     }, []);
 
-    // Updated the "app" color from #F43F5E to #06B6D4, and iconBg from #FFE4E6 to #CFFAFE
     const tools: Tool[] = [
         {
             id: "logviewer",
@@ -76,9 +77,25 @@ const MeshToolbox: FC = () => {
             title: "Mesh Rider App",
             description: "Control and monitor your network on the go.",
             icon: "📱",
-            color: "#06B6D4",    // Changed from #F43F5E
-            iconBg: "#CFFAFE",  // Changed from #FFE4E6
+            color: "#06B6D4",
+            iconBg: "#CFFAFE",
         },
+        {
+            id: "apitesting",
+            title: "Mesh Rider API Manager",
+            description: "Test all Mesh Rider radio's APIs with a single click and visualize results.",
+            icon: "🧪",
+            color: "#F59E0B",
+            iconBg: "#FEF3C7",
+        },
+        {
+            id: "firmware",
+            title: "Mesh Rider  Firmware Manager",
+            description: "Deploy and manage firmware across your industrial mesh radio network.",
+            icon: "⚡",
+            color: "#2563EB",
+            iconBg: "#DBEAFE",
+        }
     ];
 
     // Minimal inline icons for each tool card
@@ -117,6 +134,20 @@ const MeshToolbox: FC = () => {
                         <path d="M12 18H12.01" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                 );
+            case 'apitesting':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M20 7L12 3L4 7M20 7L12 11M20 7V17L12 21M12 11L4 7M12 11V21M4 7V17L12 21" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'firmware':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 10V8C21 6.89543 20.1046 6 19 6H5C3.89543 6 3 6.89543 3 8V16C3 17.1046 3.89543 18 5 18H11" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M16 16L19 19L22 16" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M19 14V19" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
             default:
                 return null;
         }
@@ -151,7 +182,7 @@ const MeshToolbox: FC = () => {
     if (activeTool === 'throughput') {
         return (
             <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="max-w-7xl mx-auto p-4">
                     <ToolHeader title="Throughput Estimation Tool" />
                     <ThroughputCalculator />
                 </div>
@@ -161,7 +192,7 @@ const MeshToolbox: FC = () => {
     if (activeTool === 'range') {
         return (
             <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="max-w-7xl mx-auto p-4">
                     <ToolHeader title="Range Estimation Tool" />
                     <RangeCalculator />
                 </div>
@@ -171,7 +202,7 @@ const MeshToolbox: FC = () => {
     if (activeTool === 'logviewer') {
         return (
             <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="max-w-7xl mx-auto p-4">
                     <ToolHeader title="Log File Upload" />
                     <LogFileUpload onFileLoaded={(content) => {
                         setLogFileContent(content);
@@ -184,7 +215,7 @@ const MeshToolbox: FC = () => {
     if (activeTool === 'logviewer-analysis') {
         return (
             <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="max-w-7xl mx-auto p-4">
                     <ToolHeader title="Log File Analysis" />
                     <LinkStatusAnalyzer initialData={logFileContent} />
                 </div>
@@ -194,27 +225,43 @@ const MeshToolbox: FC = () => {
     if (activeTool === 'app') {
         return (
             <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+                <div className="max-w-7xl mx-auto p-4">
                     <ToolHeader title="Mesh Rider Mobile App" />
                     <MeshRiderApp />
                 </div>
             </div>
         );
     }
+    if (activeTool === 'apitesting') {
+        return (
+            <div className="min-h-screen transition-colors bg-gray-900">
+                <div className="max-w-7xl mx-auto p-4">
+                    <ToolHeader title="Mesh Rider API Manager" />
+                    <ApiDocumentation />
+                </div>
+            </div>
+        );
+    }
+    if (activeTool === 'firmware') {
+        return (
+            <div className="min-h-screen transition-colors bg-gray-900">
+                <div className="max-w-7xl mx-auto p-4">
+                    <ToolHeader title="Mesh Rider Firmware Manager" />
+                    <FirmwareUpdateTool />
+                </div>
+            </div>
+        );
+    }
 
-    // Landing Page: Hero section, now with narrower margins (max-w-7xl) and smaller padding (p-4)
+    // Landing Page
     return (
         <div className={`relative min-h-screen overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
             {isDarkMode ? (
                 <ParticleBackground />
             ) : (<ParticleBackground />)}
 
-            {/* Container updated to max-w-7xl and p-4 for narrower side margins */}
             <div className="relative z-20 max-w-7xl mx-auto p-4">
-                {/* Sticky Header */}
-
                 <ThemeToggle />
-                {/* Hero Section: Logo + "Mesh Rider Toolbox" */}
                 <motion.section
                     className="text-center mb-10"
                     variants={heroVariants}
@@ -232,7 +279,7 @@ const MeshToolbox: FC = () => {
                 </motion.section>
 
                 {/* Tools Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
                     {tools.map((tool, index) => (
                         <motion.div
                             key={tool.id}
@@ -298,12 +345,16 @@ const MeshToolbox: FC = () => {
                     <h2 className="text-2xl font-bold mb-4">Recent Updates</h2>
                     <div className="space-y-4">
                         <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-green-500 mr-3"></div>
-                            <p className="text-gray-300">Mesh Rider Mobile App now available on Android, Windows, and Linux/Ubuntu OS</p>
+                            <div className="w-3 h-3 rounded-full bg-blue-500 mr-3"></div>
+                            <p className="text-gray-300">New Mesh Rider Firmware Manager for industrial mesh radios</p>
                         </div>
                         <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-blue-500 mr-3"></div>
-                            <p className="text-gray-300">Throughput Estimation Tool updated with enhanced accuracy and real-time metrics</p>
+                            <div className="w-3 h-3 rounded-full bg-amber-500 mr-3"></div>
+                            <p className="text-gray-300">Mesh Rider API Manager added for testing all APIs with a single click</p>
+                        </div>
+                        <div className="flex items-center">
+                            <div className="w-3 h-3 rounded-full bg-green-500 mr-3"></div>
+                            <p className="text-gray-300">Mesh Rider Mobile App now available on Android, Windows, and Linux/Ubuntu OS</p>
                         </div>
                         <div className="flex items-center">
                             <div className="w-3 h-3 rounded-full bg-purple-500 mr-3"></div>
