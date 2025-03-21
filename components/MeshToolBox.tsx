@@ -97,15 +97,15 @@ const MeshToolbox: FC = () => {
             color: "#06B6D4",    // Changed from #F43F5E
             iconBg: "#CFFAFE",  // Changed from #FFE4E6
         },
-        // {
-        //     id: "ai",
-        //     title: "Mesh Rider AI Agent",
-        //     description: "Get instant help and insights with our AI-powered assistant.",
-        //     icon: "🤖",
-        //     color: "#F59E0B",
-        //     iconBg: "#FEF3C7",
-        //     comingSoon: true
-        // },
+        {
+            id: "ai",
+            title: "Mesh Rider AI Agent",
+            description: "Get instant help and insights with our AI-powered assistant.",
+            icon: "🤖",
+            color: "#F59E0B",
+            iconBg: "#FEF3C7",
+            comingSoon: true
+        },
         // {
         //     id: "api",
         //     title: "API Management",
@@ -115,14 +115,14 @@ const MeshToolbox: FC = () => {
         //     iconBg: "#FCE7F3",
         //     comingSoon: true // Add this flag
         // },
-        {
-            id: "meshconnect",
-            title: "Mesh Rider Firmware",
-            description: "Manage firmware updates with comprehensive versioning control system.",
-            icon: "🔄",
-            color: "#0EA5E9",
-            iconBg: "#BAE6FD",
-        },
+        // {
+        //     id: "meshconnect",
+        //     title: "Mesh Rider Firmware",
+        //     description: "Manage firmware updates with comprehensive versioning control system.",
+        //     icon: "🔄",
+        //     color: "#0EA5E9",
+        //     iconBg: "#BAE6FD",
+        // },
     ];
 
     // Minimal inline icons for each tool card
