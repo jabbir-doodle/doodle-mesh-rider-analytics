@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ZoomIn, ZoomOut, Maximize2, Minimize2, X } from 'lucide-react';
+import { formatTimestamp, formatTimeAxis } from '@/utils/timeFormatters';
 import {
     LineChart,
     Line,
@@ -43,15 +44,7 @@ const RFSignalAnalysisChart: React.FC<RssiNoiseChartProps> = ({ logData }) => {
         return <div className="text-center text-gray-400 p-6">No data available</div>;
     }
     const filteredData = timeRange === 'recent' ? logData.slice(Math.max(0, logData.length - 30)) : logData;
-    const formatTimestamp = (value: number) =>
-        new Date(value).toLocaleString('en-US', {
-            month: 'short',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit',
-            hour12: true,
-        });
+
     const handleZoomIn = () => {
         setZoomLevel(prev => Math.min(prev + 0.25, 2.5));
     };
@@ -61,10 +54,7 @@ const RFSignalAnalysisChart: React.FC<RssiNoiseChartProps> = ({ logData }) => {
     const toggleFullscreen = () => {
         setIsExpanded(!isExpanded);
     };
-    const formatTimeAxis = (value: number) => {
-        const date = new Date(value);
-        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
-    };
+
     const formatMacAddress = (mac: string): string => {
         if (!mac) return '';
         return mac.replace(/:/g, '').match(/.{1,2}/g)?.join(':').toUpperCase() || mac;

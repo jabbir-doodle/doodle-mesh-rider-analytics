@@ -14,7 +14,7 @@ const ParticleBackground = () => {
 
         const resizeCanvas = () => {
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            canvas.height = window.innerHeight * 1.5; // Make canvas taller to accommodate scrolling
         };
 
         resizeCanvas();
@@ -96,7 +96,7 @@ const ParticleBackground = () => {
     return (
         <canvas
             ref={canvasRef}
-            className="fixed inset-0 pointer-events-none"
+            className="absolute top-0 left-0 w-full h-full pointer-events-none"
             style={{
                 zIndex: 0,
                 backgroundColor: 'transparent'

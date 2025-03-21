@@ -1,15 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, FC } from 'react';
-import LogFileUpload from './LogFileUpload';
+import LogFileUpload from './logviewer/LogFileUpload';
 import RangeCalculator from './Range';
 import ThroughputCalculator from './ThroughputCalculator';
 import ParticleBackground from './ParticleBackground';
-import LinkStatusAnalyzer from './LinkStatusAnalyzer';
+import LinkStatusAnalyzer from './logviewer/LinkStatusAnalyzer';
 import ThemeToggle from './ThemeToggle';
 import MeshRiderApp from './MeshRiderApp';
+import AIAssistant from './AIAssistant'; // Import the new component
 import { useTheme } from './ThemeProvider';
+import { useToolContext } from './context/ToolContext'; // Import the context
 import { motion } from 'framer-motion';
+import FloatingChatButton from './FloatingChatButton';
+import ApiManagementPlatform from './ApiManagementPlatform';
+import FirmwarePortal from './FirmwarePortal';
 
 interface Tool {
     id: string;
@@ -18,6 +23,7 @@ interface Tool {
     icon: string;
     color: string;
     iconBg: string;
+    comingSoon?: boolean; // Add this flag
 }
 
 interface ToolHeaderProps {
@@ -34,18 +40,30 @@ const cardVariants = {
     visible: { opacity: 1, scale: 1, transition: { duration: 0.6 } },
 };
 
+const ComingSoonRibbon = () => (
+    <div className="absolute -top-1 -right-1 overflow-hidden w-24 h-24 z-10">
+        <div className="absolute top-0 right-0 transform rotate-45 translate-y-4 -translate-x-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-xs font-bold py-1 px-8 shadow-md">
+            COMING SOON
+        </div>
+    </div>
+);
+
 const MeshToolbox: FC = () => {
     const { isDarkMode } = useTheme();
+    const {
+        logFileContent,
+        setLogFileContent,
+        activeTool,
+        setActiveTool
+    } = useToolContext();
+
     const [hoveredTool, setHoveredTool] = useState<string | null>(null);
-    const [activeTool, setActiveTool] = useState<string | null>(null);
-    const [logFileContent, setLogFileContent] = useState<string>('');
     const [animateCards, setAnimateCards] = useState<boolean>(false);
 
     useEffect(() => {
         setAnimateCards(true);
     }, []);
 
-    // Updated the "app" color from #F43F5E to #06B6D4, and iconBg from #FFE4E6 to #CFFAFE
     const tools: Tool[] = [
         {
             id: "logviewer",
@@ -78,6 +96,32 @@ const MeshToolbox: FC = () => {
             icon: "📱",
             color: "#06B6D4",    // Changed from #F43F5E
             iconBg: "#CFFAFE",  // Changed from #FFE4E6
+        },
+        // {
+        //     id: "ai",
+        //     title: "Mesh Rider AI Agent",
+        //     description: "Get instant help and insights with our AI-powered assistant.",
+        //     icon: "🤖",
+        //     color: "#F59E0B",
+        //     iconBg: "#FEF3C7",
+        //     comingSoon: true
+        // },
+        // {
+        //     id: "api",
+        //     title: "API Management",
+        //     description: "Configure and test network APIs with our interactive console.",
+        //     icon: "🔌",
+        //     color: "#EC4899",
+        //     iconBg: "#FCE7F3",
+        //     comingSoon: true // Add this flag
+        // },
+        {
+            id: "meshconnect",
+            title: "Mesh Rider Firmware",
+            description: "Manage firmware updates with comprehensive versioning control system.",
+            icon: "🔄",
+            color: "#0EA5E9",
+            iconBg: "#BAE6FD",
         },
     ];
 
@@ -117,18 +161,43 @@ const MeshToolbox: FC = () => {
                         <path d="M12 18H12.01" stroke="#06B6D4" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                 );
+            case 'meshconnect':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 16V21" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M8 16H16" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <rect x="4" y="3" width="16" height="13" rx="2" stroke="#0EA5E9" strokeWidth="2" />
+                        <path d="M9 9L12 12L15 9" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 12V6" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'ai':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="#F59E0B" strokeWidth="2" />
+                        <path d="M8 12C8 10 9.5 9 12 9C14.5 9 16 10 16 12C16 14 14.5 15 12 15C9.5 15 8 14 8 12Z" stroke="#F59E0B" strokeWidth="2" />
+                        <path d="M12 16V18" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M9 7L10 8" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M15 7L14 8" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                );
+            case 'api':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 6H20M4 12H20M4 18H14" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M17 16L21 20M21 16L17 20" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                );
             default:
                 return null;
         }
     };
 
-    // Navigation logic
     const handleToolLaunch = (toolId: string): void => {
         setActiveTool(toolId);
     };
     const handleBackToMain = (): void => {
         setActiveTool(null);
-        setLogFileContent('');
     };
 
     // Simple subheader
@@ -147,11 +216,10 @@ const MeshToolbox: FC = () => {
         </div>
     );
 
-    // Pages for each tool
     if (activeTool === 'throughput') {
         return (
-            <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
                     <ToolHeader title="Throughput Estimation Tool" />
                     <ThroughputCalculator />
                 </div>
@@ -160,41 +228,58 @@ const MeshToolbox: FC = () => {
     }
     if (activeTool === 'range') {
         return (
-            <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
                     <ToolHeader title="Range Estimation Tool" />
                     <RangeCalculator />
                 </div>
             </div>
         );
     }
+    if (activeTool === 'meshconnect') {
+        return (
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
+
+                    <FirmwarePortal
+                        isDarkMode={isDarkMode}
+                        onBack={() => setActiveTool('')}  // Add this line to navigate back
+                    />
+                </div>
+            </div>
+        );
+    }
+
     if (activeTool === 'logviewer') {
         return (
-            <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
-                    <ToolHeader title="Log File Upload" />
-                    <LogFileUpload onFileLoaded={(content) => {
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <LogFileUpload
+                    onFileLoaded={(content) => {
                         setLogFileContent(content);
-                        if (content.length) setActiveTool('logviewer-analysis');
-                    }} />
-                </div>
+                        setActiveTool('logviewer-analysis');
+                    }}
+                    onBack={() => setActiveTool('')} // This will return to the main dashboard
+                />
             </div>
         );
     }
+
     if (activeTool === 'logviewer-analysis') {
         return (
-            <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
-                    <ToolHeader title="Log File Analysis" />
-                    <LinkStatusAnalyzer initialData={logFileContent} />
-                </div>
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <LinkStatusAnalyzer
+                    initialData={logFileContent || undefined}
+                    onBack={() => setActiveTool('')}  // Add this line
+                />
             </div>
         );
     }
+
+
     if (activeTool === 'app') {
         return (
-            <div className="min-h-screen transition-colors bg-gray-900">
-                <div className="max-w-6xl mx-auto p-6">
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
                     <ToolHeader title="Mesh Rider Mobile App" />
                     <MeshRiderApp />
                 </div>
@@ -202,21 +287,38 @@ const MeshToolbox: FC = () => {
         );
     }
 
-    // Landing Page: Hero section, now with narrower margins (max-w-7xl) and smaller padding (p-4)
+    if (activeTool === 'ai') {
+        return (
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
+                    <ToolHeader title="MeshRider AI Assistant" />
+                    <AIAssistant />
+                </div>
+            </div>
+        );
+    }
+    if (activeTool === 'api') {
+        return (
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
+                    <ToolHeader title="API Management Platform" />
+                    <ApiManagementPlatform />
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className={`relative min-h-screen overflow-hidden transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className={`relative min-h-screen w-full overflow-y-auto transition-colors duration-300 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
             {isDarkMode ? (
                 <ParticleBackground />
             ) : (<ParticleBackground />)}
 
-            {/* Container updated to max-w-7xl and p-4 for narrower side margins */}
-            <div className="relative z-20 max-w-7xl mx-auto p-4">
-                {/* Sticky Header */}
-
+            <div className="relative z-20 max-w-7xl mx-auto p-4 pb-24">
                 <ThemeToggle />
-                {/* Hero Section: Logo + "Mesh Rider Toolbox" */}
+
                 <motion.section
-                    className="text-center mb-10"
+                    className="text-center mb-10 pt-4"
                     variants={heroVariants}
                     initial="hidden"
                     animate="visible"
@@ -231,7 +333,6 @@ const MeshToolbox: FC = () => {
                     </div>
                 </motion.section>
 
-                {/* Tools Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                     {tools.map((tool, index) => (
                         <motion.div
@@ -245,6 +346,7 @@ const MeshToolbox: FC = () => {
                             onMouseEnter={() => setHoveredTool(tool.id)}
                             onMouseLeave={() => setHoveredTool(null)}
                         >
+                            {tool.comingSoon && <ComingSoonRibbon />}
                             <div className="absolute inset-0 bg-gradient-to-br opacity-40"
                                 style={{
                                     background: `linear-gradient(135deg, ${tool.color}40 0%, transparent 60%)`
@@ -293,8 +395,7 @@ const MeshToolbox: FC = () => {
                     ))}
                 </div>
 
-                {/* Recent Updates Section */}
-                <div className="p-6 rounded-xl border bg-opacity-30 backdrop-blur-lg">
+                <div className="p-6 rounded-xl border bg-opacity-30 backdrop-blur-lg mb-16">
                     <h2 className="text-2xl font-bold mb-4">Recent Updates</h2>
                     <div className="space-y-4">
                         <div className="flex items-center">

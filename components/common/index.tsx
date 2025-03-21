@@ -94,32 +94,27 @@ export const InputField: React.FC<InputFieldProps> = ({
 );
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({ deviceKey, device, isSelected, onClick }) => {
-    const color = getDeviceColor(deviceKey);
-
     return (
         <motion.div
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            whileHover={{ y: -2, transition: { duration: 0.2 } }}
             whileTap={{ scale: 0.98 }}
             onClick={onClick}
-            className={`bg-gray-800 hover:bg-gray-750 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer h-full ${isSelected
-                ? `ring-2 ring-${color}-500 shadow-lg shadow-${color}-500/20`
-                : "ring-1 ring-gray-700"
-                }`}
+            className={`bg-white rounded-lg shadow border ${isSelected ? 'border-blue-500' : 'border-gray-200'} transition-all duration-200 cursor-pointer h-full overflow-hidden`}
         >
-            <div className="p-4 flex flex-col items-center h-full">
-                <div className={`w-full h-20 flex items-center justify-center mb-4 rounded-lg ${isSelected ? `bg-${color}-950/30` : 'bg-gray-900/30'}`}>
+            <div className="p-4 flex flex-col items-center justify-between h-full">
+                <div className="flex items-center justify-center w-full mb-3">
                     <img
                         src={device.image}
                         alt={device.name}
-                        className="h-16 w-auto object-contain"
+                        className="h-16 w-auto object-contain mx-auto"
                     />
                 </div>
-                <div className="text-center">
-                    <h3 className={`font-medium ${isSelected ? `text-${color}-400` : 'text-gray-200'}`}>
+                <div className="text-center mt-auto">
+                    <h3 className={`text-sm font-medium ${isSelected ? 'text-blue-600' : 'text-gray-700'}`}>
                         {device.name}
                     </h3>
                     {isSelected && (
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-${color}-500/20 text-${color}-400 mt-1`}>
+                        <span className="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
                             Selected
                         </span>
                     )}
@@ -128,7 +123,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({ deviceKey, device, isSel
         </motion.div>
     );
 };
-
 export const McsRangeItem: React.FC<McsRangeItemProps> = ({ result }) => {
     const textClass = result.withinThroughput ? "text-green-500" : "text-red-500";
     const clearanceClass = result.withinClearance ? "text-green-500" : "text-red-500";
@@ -158,13 +152,13 @@ export const CustomTooltip: React.FC<CustomTooltipProps> = ({ active, payload, l
                 <p className="font-medium text-white mb-1">Distance: {label} meters</p>
                 <p className="text-amber-400 text-sm">
                     <span className="inline-block w-3 h-3 bg-amber-400 rounded-full mr-2"></span>
-                    Throughput: {payload[0].value} Mbps
+                    Throughput: {payload[0]?.value} Mbps
                 </p>
                 <p className="text-emerald-400 text-sm">
                     <span className="inline-block w-3 h-3 bg-emerald-400 rounded-full mr-2"></span>
-                    Fresnel Zone: {payload[1].value} meters
+                    Fresnel Zone: {payload[1] ? payload[1].value : "N/A"} meters
                 </p>
-                <p className="text-gray-300 text-sm mt-1">MCS: {payload[0].payload.mcs}</p>
+                <p className="text-gray-300 text-sm mt-1">MCS: {payload[0]?.payload?.mcs || "N/A"}</p>
             </div>
         );
     }

@@ -3,6 +3,7 @@
 import React from 'react';
 import { Radio, Waves, Antenna, Signal } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { formatTimestamp, formatTimeAxis } from '@/utils/timeFormatters';
 
 interface OperationMetricProps {
   icon: LucideIcon;
@@ -11,6 +12,7 @@ interface OperationMetricProps {
   subLabel?: string;
   status?: 'online' | 'offline';
   highlight?: boolean;
+  timestamp?: string;
 }
 
 const OperationMetric: React.FC<OperationMetricProps> = ({
@@ -19,40 +21,53 @@ const OperationMetric: React.FC<OperationMetricProps> = ({
   value,
   subLabel,
   status,
-  highlight
-}) => (
-  <div className={`relative overflow-hidden rounded-xl bg-gradient-to-b from-gray-800/50 to-gray-900/50 p-4 transition-all duration-300 hover:from-gray-800 hover:to-gray-900 ${highlight ? 'ring-2 ring-blue-500/50' : ''}`}>
-    <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 to-purple-500/3" />
-    <div className="relative space-y-2">
-      <div className="flex items-center gap-2 text-gray-400">
-        <Icon className="h-5 w-5" />
-        <span className="text-sm font-medium">{label}</span>
-        {status && (
-          <span className={`ml-auto h-2 w-2 rounded-full ${status === 'online' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+  highlight,
+  timestamp
+}) => {
+  // Using the utility function with time-only format
+  const formattedTime = timestamp ? formatTimestamp(Number(timestamp), false) : '';
+
+  return (
+    <div className={`relative overflow-hidden rounded-xl bg-gradient-to-b from-gray-800/50 to-gray-900/50 p-4 transition-transform duration-300 hover:scale-[1.01] ${highlight ? 'ring-2 ring-blue-500/50' : ''}`}>
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-500/3 to-purple-500/3" />
+      <div className="relative space-y-2">
+        <div className="flex items-center gap-2 text-gray-400">
+          <Icon className="h-5 w-5" />
+          <span className="text-sm font-medium">{label}</span>
+          {status && (
+            <span className={`ml-auto h-2 w-2 rounded-full ${status === 'online' ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+          )}
+        </div>
+        <div className="flex items-baseline gap-2">
+          <div className="text-2xl font-bold text-white">{value}</div>
+          {subLabel && <div className="text-sm text-gray-500">{subLabel}</div>}
+        </div>
+        {timestamp && (
+          <div className="text-xs text-gray-500 mt-1">Updated: {formattedTime}</div>
         )}
       </div>
-      <div className="flex items-baseline gap-2">
-        <div className="text-2xl font-bold text-white">{value}</div>
-        {subLabel && <div className="text-sm text-gray-500">{subLabel}</div>}
-      </div>
     </div>
-  </div>
-);
+  );
+};
 
 interface OperationsDetailsProps {
   operChan: number;
   operFreq: number;
   chanWidth: number;
   lnaStatus: number;
+  timestamp?: string;
 }
 
 const OperationsDetails: React.FC<OperationsDetailsProps> = ({
   operChan,
   operFreq,
   chanWidth,
-  lnaStatus
+  lnaStatus,
+  timestamp
 }) => {
   const isLnaActive = [1, 3].includes(lnaStatus);
+  // Using the utility function with the full date-time format
+  const formattedTime = timestamp ? formatTimestamp(Number(timestamp)) : 'N/A';
 
   const getAmplifierStatus = (status: number): { text: string; status: 'online' | 'offline' } => ({
     text: [1, 3].includes(status) ? 'On' : 'Off',
@@ -69,7 +84,7 @@ const OperationsDetails: React.FC<OperationsDetailsProps> = ({
         </div>
         <div>
           <h2 className="text-lg font-semibold text-white">Operation Details</h2>
-          <p className="text-sm text-gray-400">Radio Configuration and Status</p>
+          <p className="text-sm text-gray-400">Radio Configuration and Status - Last Updated: {formattedTime}</p>
         </div>
       </div>
 
@@ -87,6 +102,7 @@ const OperationsDetails: React.FC<OperationsDetailsProps> = ({
           label="Operating Frequency"
           value={`${operFreq} MHz`}
           subLabel="Center Frequency"
+          timestamp={timestamp}
         />
 
         <OperationMetric
@@ -94,6 +110,7 @@ const OperationsDetails: React.FC<OperationsDetailsProps> = ({
           label="Channel Width"
           value={chanWidth === 0 ? '20 MHz' : `${chanWidth} MHz`}
           subLabel="Bandwidth"
+          timestamp={timestamp}
         />
 
         <OperationMetric
@@ -102,6 +119,7 @@ const OperationsDetails: React.FC<OperationsDetailsProps> = ({
           value={amplifierStatus.text}
           status={amplifierStatus.status}
           highlight={isLnaActive}
+          timestamp={timestamp}
         />
       </div>
 

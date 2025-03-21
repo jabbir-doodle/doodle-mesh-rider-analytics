@@ -121,7 +121,44 @@ export interface RFParameters {
   codingRate: number[];
   bitsPerSymbol: number[];
 }
+export interface ProductModel {
+  id: string;
+  name: string;
+  frequencyBand: string;
+  formFactor: FormFactor;
+  description: string;
+  specifications: ProductSpecifications;
+  features: string[];
+  applications: string[];
+}
 
+export interface FormFactor {
+  type: 'OEM' | 'Mini-OEM' | 'Wearable';
+  dimensions: string;
+  weight: string;
+  interfaces: string[];
+  antennaConnectors: string;
+  batteryOption: boolean;
+  ingressProtection?: string;
+}
+
+export interface ProductSpecifications {
+  frequencyRange: string;
+  bandwidth: string[];
+  mimoConfig: string;
+  maxThroughput: string;
+  maxTxPower: string;
+  rxSensitivity: string;
+  operatingTemp: string;
+  powerConsumption: {
+    tx: string;
+    rx: string;
+    standby: string;
+  };
+  maxRange: string;
+  encryption: string[];
+  certifications: string[];
+}
 export interface CalculationResults {
   chartData: ChartDataPoint[];
   rangeEstFinal: number;
@@ -150,4 +187,12 @@ export interface DialogProps {
 export interface DialogContentProps {
   children: React.ReactNode;
   className?: string;
+}
+export interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  products?: string[];
+  productRecommendations?: string[];
+  charts?: any[];
 }
