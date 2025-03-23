@@ -12,18 +12,18 @@ export async function POST(req: NextRequest) {
 
     let systemMessage = `You are an expert Mesh Rider engineer and mesh networking specialist. Answer questions with concise technical details and calculations when appropriate.`;
 
-    if (context.activeTool === 'range') {
+    if (context?.activeTool === 'range') {
       systemMessage += `\nUser is using the Range Calculator. Provide specific range calculations.`;
-    } else if (context.activeTool === 'throughput') {
+    } else if (context?.activeTool === 'throughput') {
       systemMessage += `\nUser is using the Throughput Calculator. Provide throughput calculations.`;
-    } else if (context.activeTool === 'logviewer' || context.activeTool === 'logviewer-analysis') {
+    } else if (context?.activeTool === 'logviewer' || context?.activeTool === 'logviewer-analysis') {
       systemMessage += `\nUser is using the Log Viewer.`;
-      if (context.logFileContent) {
+      if (context?.logFileContent) {
         systemMessage += `\nLog data provided: ${context.logFileContent.substring(0, 500)}...`;
       }
     }
 
-    if (context.productData) {
+    if (context?.productData) {
       systemMessage += `\nReference product specifications when relevant. Available products: ${JSON.stringify(context.productData.map((p: ProductModel) => ({ id: p.id, name: p.name, band: p.frequencyBand })))}`;
     }
 
@@ -48,4 +48,9 @@ export async function POST(req: NextRequest) {
     console.error('Error processing chat request:', error);
     return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
+}
+
+// Add a GET method for testing the endpoint
+export async function GET() {
+  return NextResponse.json({ message: 'Chat API is available' });
 }
