@@ -5,6 +5,7 @@ import { useTheme } from './ThemeProvider';
 import ThemeToggle from './ThemeToggle';
 import { motion } from 'framer-motion';
 import { Download, Info, ExternalLink, CheckCircle, ChevronDown } from 'lucide-react';
+import ParticleBackground from './ParticleBackground';
 
 const MeshRiderLanding: React.FC = () => {
     const { isDarkMode } = useTheme();
@@ -61,6 +62,7 @@ const MeshRiderLanding: React.FC = () => {
 
     return (
         <div className="min-h-screen transition-colors duration-300">
+            <ParticleBackground />
             <div className="mesh-bg"></div>
 
             {/* <nav className="nav theme-card border-b border-gray-700">
@@ -97,6 +99,18 @@ const MeshRiderLanding: React.FC = () => {
                 animate="visible"
                 variants={containerVariants}
             >
+                <motion.div variants={itemVariants} className="mb-10">
+                    <img
+                        src="/logo.png"
+                        alt="Mesh Rider Logo"
+                        style={{
+                            display: "block",
+                            height: "auto",
+                            maxWidth: "150px",
+                            width: "100%"
+                        }}
+                    />
+                </motion.div>
                 <motion.h1 variants={itemVariants} className="glowing-text text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
                     Mesh Rider Application
                 </motion.h1>
