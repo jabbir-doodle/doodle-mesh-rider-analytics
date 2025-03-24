@@ -97,15 +97,15 @@ const MeshToolbox: FC = () => {
             color: "#06B6D4",    // Changed from #F43F5E
             iconBg: "#CFFAFE",  // Changed from #FFE4E6
         },
-        {
-            id: "ai",
-            title: "Mesh Rider AI Agent",
-            description: "Get instant help and insights with our AI-powered assistant.",
-            icon: "🤖",
-            color: "#F59E0B",
-            iconBg: "#FEF3C7",
-            comingSoon: true
-        },
+        // {
+        //     id: "ai",
+        //     title: "Mesh Rider AI Agent",
+        //     description: "Get instant help and insights with our AI-powered assistant.",
+        //     icon: "🤖",
+        //     color: "#F59E0B",
+        //     iconBg: "#FEF3C7",
+        //     comingSoon: true
+        // },
         // {
         //     id: "api",
         //     title: "API Management",
