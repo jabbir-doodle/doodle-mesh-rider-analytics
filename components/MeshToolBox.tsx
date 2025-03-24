@@ -269,7 +269,7 @@ const MeshToolbox: FC = () => {
             <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
                 <LinkStatusAnalyzer
                     initialData={logFileContent || undefined}
-                    onBack={() => setActiveTool('')}  // Add this line
+                    onBack={() => setActiveTool('logviewer')}
                 />
             </div>
         );

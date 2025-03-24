@@ -341,9 +341,16 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 md:mb-8">
             {/* Left Side: Logo + Title + Subtitle with proper spacing */}
             <div className="flex items-center w-full">
-              {/* Back button with proper positioning */}
+
               <button
-                onClick={() => setLogData([])}  // This only clears data, doesn't navigate
+                onClick={() => {
+
+                  if (onBack) {
+                    onBack();
+                  } else {
+                    setLogData([]);
+                  }
+                }}
                 className="flex-shrink-0 mr-3 p-1.5 rounded-full bg-gray-800 text-gray-300 hover:bg-gray-700 transition-colors focus:outline-none"
                 aria-label="Go back to upload screen"
               >
@@ -374,10 +381,16 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
             {/* Right Side: Button - Hidden on mobile (shown in menu) */}
             {!isMobile && (
               <button
-                onClick={() => setLogData([])}
+                onClick={() => {
+                  if (onBack) {
+                    onBack();
+                  } else {
+                    setLogData([]);
+                  }
+                }}
                 className="mt-2 md:mt-0 px-3 py-1.5 text-sm bg-gray-800 text-gray-300 rounded-lg hover:bg-gray-700 flex-shrink-0"
               >
-                Upload New File
+                Back to Upload
               </button>
             )}
           </div>
