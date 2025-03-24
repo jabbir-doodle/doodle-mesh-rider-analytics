@@ -1,53 +1,54 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
-  Sliders, Wifi, BarChart2, ChevronDown, ChevronUp, RefreshCw, Info,
+  Sliders, Wifi, BarChart2, ChevronDown, ChevronUp, RefreshCw,
   Zap, Activity, Radio, ArrowRight, Layers
 } from "lucide-react";
 
 import {
-  DeviceCard, InputField, RFChart, AnalysisPanel, Animations, McsRangeItem
+  DeviceCard, InputField, RFChart, AnalysisPanel, Animations
 } from "./common/UIKit";
 
 import {
   DEVICES, BANDWIDTH_OPTIONS, ANTENNA_OPTIONS, STREAM_OPTIONS,
-  ChartDataPoint, DeviceKey
+  DeviceKey
 } from "./common/RFData";
 
 import {
   useRFCalculations, getPowerLimitOptions
 } from "./common/RFEngine";
+import ParticleBackground from "./ParticleBackground";
 
 const ThroughputCalculator: React.FC = () => {
   const [selectedDevice, setSelectedDevice] = useState<DeviceKey>("2L");
-  const [frequency, setFrequency] = useState(2450);
-  const [bandwidth, setBandwidth] = useState("20");
-  const [antennas, setAntennas] = useState("2");
-  const [streams, setStreams] = useState("2");
-  const [udpPayload, setUdpPayload] = useState(1500);
-  const [antennaGain, setAntennaGain] = useState(6);
-  const [fadeMargin, setFadeMargin] = useState(10);
-  const [fresnelClearance, setFresnelClearance] = useState(60);
-  const [isOverGround, setIsOverGround] = useState(false);
-  const [powerLimit, setPowerLimit] = useState(33);
-  const [framesAggregated, setFramesAggregated] = useState(10);
-  const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("dual");
+  const [frequency, setFrequency] = useState<string>("2450");
+  const [bandwidth, setBandwidth] = useState<string>("20");
+  const [antennas, setAntennas] = useState<string>("2");
+  const [streams, setStreams] = useState<string>("2");
+  const [udpPayload, setUdpPayload] = useState<string>("1500");
+  const [antennaGain, setAntennaGain] = useState<string>("6");
+  const [fadeMargin, setFadeMargin] = useState<string>("10");
+  const [fresnelClearance, setFresnelClearance] = useState<string>("60");
+  const [isOverGround, setIsOverGround] = useState<boolean>(false);
+  const [powerLimit, setPowerLimit] = useState<string>("33");
+  const [framesAggregated, setFramesAggregated] = useState<string>("10");
+  const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<"dual" | "throughput" | "fresnel" | "snr">("dual");
   const chartRef = useRef<HTMLDivElement | null>(null);
 
   const {
-    chartData,  // <- This was missing before
+    chartData,
+    analysisResults,
     isCalculating,
     calculationComplete,
-    calculateRF,
-    analysisResults
+    calculateRF
   } = useRFCalculations('throughput');
 
   useEffect(() => {
     if (selectedDevice === "1L") {
       setAntennas("1");
       setStreams("1");
-      if (powerLimit > 30) setPowerLimit(30);
+      if (parseInt(powerLimit) > 30) setPowerLimit("30");
     }
   }, [selectedDevice, powerLimit]);
 
@@ -67,15 +68,20 @@ const ThroughputCalculator: React.FC = () => {
       framesAggregated
     });
 
-    setTimeout(() => {
-      if (chartRef.current) {
-        chartRef.current.scrollIntoView({ behavior: "smooth" });
-      }
-    }, 600);
+    if (chartRef.current) {
+      const timeoutId = setTimeout(() => {
+        chartRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
   };
+
+  const handleNumericChange = (setter: React.Dispatch<React.SetStateAction<string>>) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setter(e.target.value);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
+      <ParticleBackground />
       <div className="relative z-20 pt-8 pb-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <motion.div
           initial="hidden"
@@ -139,7 +145,7 @@ const ThroughputCalculator: React.FC = () => {
                   label="Center Frequency (MHz)"
                   id="frequency"
                   value={frequency}
-                  onChange={(e) => setFrequency(parseInt(e.target.value))}
+                  onChange={handleNumericChange(setFrequency)}
                   type="number"
                   min="1000"
                   max="6000"
@@ -148,7 +154,7 @@ const ThroughputCalculator: React.FC = () => {
                   label="Channel Bandwidth (MHz)"
                   id="bandwidth"
                   value={bandwidth}
-                  onChange={(e) => setBandwidth(e.target.value)}
+                  onChange={handleNumericChange(setBandwidth)}
                   type="select"
                   options={BANDWIDTH_OPTIONS}
                 />
@@ -156,105 +162,89 @@ const ThroughputCalculator: React.FC = () => {
                   label="UDP Payload (bytes)"
                   id="udpPayload"
                   value={udpPayload}
-                  onChange={(e) => setUdpPayload(parseInt(e.target.value))}
+                  onChange={handleNumericChange(setUdpPayload)}
                   type="number"
                   min="10"
                   max="1500"
                 />
               </div>
 
-              <AnimatePresence>
-                {advancedOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="pt-4 border-t border-gray-700">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <InputField
-                          label="Number of Antennas"
-                          id="antennas"
-                          value={antennas}
-                          onChange={(e) => setAntennas(e.target.value)}
-                          type="select"
-                          options={ANTENNA_OPTIONS}
-                          disabled={selectedDevice === "1L"}
-                        />
-                        <InputField
-                          label="Number of Data Streams"
-                          id="streams"
-                          value={streams}
-                          onChange={(e) => setStreams(e.target.value)}
-                          type="select"
-                          options={STREAM_OPTIONS}
-                          disabled={selectedDevice === "1L"}
-                        />
-                        <InputField
-                          label="TX + RX Antenna Gain (dBi)"
-                          id="antennaGain"
-                          value={antennaGain}
-                          onChange={(e) => setAntennaGain(parseInt(e.target.value))}
-                          type="number"
-                          min="0"
-                          max="100"
-                        />
-                        <InputField
-                          label="Fade Margin (dB)"
-                          id="fadeMargin"
-                          value={fadeMargin}
-                          onChange={(e) => setFadeMargin(parseInt(e.target.value))}
-                          type="number"
-                          min="0"
-                          max="30"
-                        />
-                        <InputField
-                          label="Fresnel Zone Clearance (%)"
-                          id="fresnelClearance"
-                          value={fresnelClearance}
-                          onChange={(e) => setFresnelClearance(parseInt(e.target.value))}
-                          type="number"
-                          min="0"
-                          max="100"
-                        />
-                        <InputField
-                          label="Power Limit (dBm)"
-                          id="powerLimit"
-                          value={powerLimit}
-                          onChange={(e) => setPowerLimit(parseInt(e.target.value))}
-                          type="select"
-                          options={getPowerLimitOptions(selectedDevice)}
-                        />
-                        <InputField
-                          label="Frames Aggregated"
-                          id="framesAggregated"
-                          value={framesAggregated}
-                          onChange={(e) => setFramesAggregated(parseInt(e.target.value))}
-                          type="number"
-                          min="1"
-                          max="32"
-                        />
-                        <div className="flex flex-col space-y-2">
-                          <div className="flex items-center">
-                            <input
-                              type="checkbox"
-                              id="isOverGround"
-                              checked={isOverGround}
-                              onChange={(e) => setIsOverGround(e.target.checked)}
-                              className="h-4 w-4 text-amber-500 focus:ring-amber-500 border-gray-600 rounded"
-                            />
-                            <label htmlFor="isOverGround" className="ml-2 text-sm text-gray-300">
-                              Ground level propagation
-                            </label>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <div className={`transition-all duration-300 overflow-hidden ${advancedOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className="pt-4 border-t border-gray-700">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <InputField
+                      label="Number of Antennas"
+                      id="antennas"
+                      value={antennas}
+                      onChange={handleNumericChange(setAntennas)}
+                      type="select"
+                      options={ANTENNA_OPTIONS}
+                      disabled={selectedDevice === "1L"}
+                    />
+                    <InputField
+                      label="Number of Data Streams"
+                      id="streams"
+                      value={streams}
+                      onChange={handleNumericChange(setStreams)}
+                      type="select"
+                      options={STREAM_OPTIONS}
+                      disabled={selectedDevice === "1L"}
+                    />
+                    <InputField
+                      label="TX + RX Antenna Gain (dBi)"
+                      id="antennaGain"
+                      value={antennaGain}
+                      onChange={handleNumericChange(setAntennaGain)}
+                      type="number"
+                      min="0"
+                      max="100"
+                    />
+                    <InputField
+                      label="Fade Margin (dB)"
+                      id="fadeMargin"
+                      value={fadeMargin}
+                      onChange={handleNumericChange(setFadeMargin)}
+                      type="number"
+                      min="0"
+                      max="30"
+                    />
+                    <InputField
+                      label="Fresnel Zone Clearance (%)"
+                      id="fresnelClearance"
+                      value={fresnelClearance}
+                      onChange={handleNumericChange(setFresnelClearance)}
+                      type="number"
+                      min="0"
+                      max="100"
+                    />
+                    <InputField
+                      label="Power Limit (dBm)"
+                      id="powerLimit"
+                      value={powerLimit}
+                      onChange={handleNumericChange(setPowerLimit)}
+                      type="select"
+                      options={getPowerLimitOptions(selectedDevice)}
+                    />
+                    <InputField
+                      label="Frames Aggregated"
+                      id="framesAggregated"
+                      value={framesAggregated}
+                      onChange={handleNumericChange(setFramesAggregated)}
+                      type="number"
+                      min="1"
+                      max="32"
+                    />
+                    <InputField
+                      label="Ground level propagation"
+                      id="isOverGround"
+                      checked={isOverGround}
+                      value={isOverGround}
+                      onChange={(e) => setIsOverGround((e.target as HTMLInputElement).checked)}
+                      type="checkbox"
+                    />
+                  </div>
+                </div>
+              </div>
 
               <div className="flex justify-center pt-4">
                 <motion.button
@@ -293,65 +283,94 @@ const ThroughputCalculator: React.FC = () => {
                   <ArrowRight className="w-5 h-5 mr-2 text-amber-400" />
                   <span>RF Performance Analysis</span>
                 </h2>
-                <div className="flex space-x-2 mt-4">
-                  <button
-                    onClick={() => setActiveTab("dual")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "dual" ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
-                  >
-                    <BarChart2 className="w-4 h-4 inline mr-1" />
-                    Combined
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("throughput")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "throughput" ? "bg-amber-500 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
-                  >
-                    <BarChart2 className="w-4 h-4 inline mr-1" />
-                    Throughput
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("fresnel")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "fresnel" ? "bg-green-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
-                  >
-                    <Info className="w-4 h-4 inline mr-1" />
-                    Fresnel
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("snr")}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === "snr" ? "bg-blue-600 text-white" : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
-                  >
-                    <Activity className="w-4 h-4 inline mr-1" />
-                    SNR
-                  </button>
+                <div className="flex flex-wrap gap-2 mt-4">
+                  {['dual', 'throughput', 'fresnel', 'snr'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab as "dual" | "throughput" | "fresnel" | "snr")}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium ${activeTab === tab
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-800 text-gray-300 hover:bg-gray-700"}`}
+                    >
+                      {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                    </button>
+                  ))}
                 </div>
               </div>
 
               <div className="p-6">
                 <RFChart
-                  type={activeTab as any}
+                  type={activeTab}
                   data={chartData}
-                  frequency={frequency}
+                  frequency={parseInt(frequency)}
                   bandwidth={bandwidth}
+                  calculatorType="throughput"
                 />
               </div>
 
               <div className="mt-2 p-5 border-t border-gray-700">
-                <AnalysisPanel results={analysisResults} />
-
-                <div className="mt-6">
-                  <div className="bg-white-900/50 rounded-xl p-5 border border-gray-800">
-                    {/* <h3 className="text-lg font-medium text-blue-400 mb-4">MCS Rate Distribution</h3> */}
-                    <div className="grid grid-cols-4 gap-2">
-                      {analysisResults.rangeResults.map((data, index) => (
-                        <div key={index} className="bg-gray-800/30 p-2 rounded text-center">
-                          <div className="text-xs text-gray-400">MCS {data.mcs}</div>
-                          <div className="text-xs font-medium mt-1">
-                            {DEVICES[selectedDevice].modulation[index]},
-                            {Math.round(DEVICES[selectedDevice].codingRate[index] * 100)}%
+                {analysisResults && (
+                  <div className="mt-6">
+                    <div className="bg-white-900/50 rounded-xl p-5 border border-gray-800">
+                      <h3 className="text-lg font-medium text-blue-400 mb-4">MCS Rate Performance Analysis</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {analysisResults.rangeResults && analysisResults.rangeResults.map((data, index) => (
+                          <div key={`mcs-data-${index}`} className="bg-gray-800/30 p-2 rounded text-center">
+                            <div className="text-xs text-gray-400">MCS {data.mcs}</div>
+                            <div className="text-xs font-medium mt-1">
+                              {DEVICES[selectedDevice].modulation[index % 8]},
+                              {Math.round(DEVICES[selectedDevice].codingRate[index % 8] * 100)}%
+                            </div>
+                            <div className="text-xs text-amber-400 mt-1">{data.throughput.toFixed(1)} Mbps</div>
+                            <div className="text-xs text-blue-400 mt-1">{data.range.toFixed(1)} m</div>
                           </div>
-                          <div className="text-xs text-amber-400 mt-1">{data.throughput.toFixed(1)} Mbps</div>
-                          <div className="text-xs text-blue-400 mt-1">{data.range.toFixed(1)} m</div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-white-900/50 rounded-xl p-5 border border-gray-800">
+                    <h3 className="text-lg font-medium text-green-400 mb-4">Maximum Performance</h3>
+                    <div className="space-y-4">
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Maximum Throughput:</span>
+                        <span className="text-amber-400 font-bold">{analysisResults?.maxThroughput || 0} Mbps</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Maximum Range:</span>
+                        <span className="text-green-400 font-bold">{analysisResults?.maxRange || 0} m</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Device:</span>
+                        <span className="text-blue-400 font-bold">{DEVICES[selectedDevice].name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-300">Bandwidth:</span>
+                        <span className="text-purple-400 font-bold">{bandwidth} MHz</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white-900/50 rounded-xl p-5 border border-gray-800">
+                    <h3 className="text-lg font-medium text-amber-400 mb-4">Usage Recommendations</h3>
+                    <div className="space-y-2 text-sm text-gray-300">
+                      <p>
+                        <span className="text-blue-400 font-medium">Short Range, High Throughput:</span> Use
+                        MCS {analysisResults?.rangeResults?.[7]?.mcs || 7} for maximum data transfer up to
+                        {analysisResults?.rangeResults?.[7]?.range.toFixed(1) || 0}m.
+                      </p>
+                      <p>
+                        <span className="text-green-400 font-medium">Medium Range, Balanced:</span> Use
+                        MCS {analysisResults?.rangeResults?.[3]?.mcs || 3} for reliable connections up to
+                        {analysisResults?.rangeResults?.[3]?.range.toFixed(1) || 0}m.
+                      </p>
+                      <p>
+                        <span className="text-amber-400 font-medium">Long Range, Lower Throughput:</span> Use
+                        MCS {analysisResults?.rangeResults?.[0]?.mcs || 0} for maximum range up to
+                        {analysisResults?.rangeResults?.[0]?.range.toFixed(1) || 0}m.
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -234,22 +234,6 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
     </div>
   );
 
-  // if (logData.length === 0) {
-  //   return (
-  //     <div className="fixed inset-0 bg-gray-950 flex flex-col items-center justify-center p-4 md:p-6">
-  //       <div className="max-w-2xl w-full">
-  //         <div className="text-center mb-4 md:mb-8">
-  //           <h1 className="glowing-text text-2xl md:text-3xl lg:text-4xl text-white">Mesh Rider Log Viewer</h1>
-  //           <p className="text-sm md:text-base text-gray-400">Upload your Mesh Rider Radio log file to analyze performance metrics</p>
-  //         </div>
-  //         <FileUpload
-  //           onFileLoaded={handleFileLoaded}
-  //           onBack={onBack} // Just pass through the onBack prop directly
-  //         />
-  //       </div>
-  //     </div>
-  //   );
-  // }
 
   return (
     <div className="fixed inset-0 bg-gray-950 overflow-auto">
