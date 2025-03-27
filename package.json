@@ -9,9 +9,19 @@
     "start": "next start",
     "lint": "next lint",
     "predeploy": "npm run build && npm run export",
-    "deploy": "gh-pages -d out"
+    "deploy": "gh-pages -d out",
+    "build:static": "next build",
+    "cap:init": "npx cap init MeshToolbox com.doodle.meshtoolbox",
+    "cap:add": "npx cap add android",
+    "cap:sync": "npx cap sync",
+    "cap:open": "npx cap open android"
   },
   "dependencies": {
+    "@capacitor/android": "^5.7.8",
+    "@capacitor/core": "^5.7.8",
+    "@capacitor/device": "^5.0.8",
+    "@capacitor/filesystem": "^5.2.2",
+    "@capacitor/network": "^5.0.8",
     "@types/node": "20.6.2",
     "eslint": "8.49.0",
     "eslint-config-next": "13.5.1",
@@ -30,6 +40,7 @@
     "sonner": "^2.0.1"
   },
   "devDependencies": {
+    "@capacitor/cli": "^5.7.8",
     "@tailwindcss/postcss": "^4.0.15",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">MeshToolbox</string>
+    <string name="title_activity_main">MeshToolbox</string>
+    <string name="package_name">com.doodle.meshtoolbox</string>
+    <string name="custom_url_scheme">com.doodle.meshtoolbox</string>
+</resources>

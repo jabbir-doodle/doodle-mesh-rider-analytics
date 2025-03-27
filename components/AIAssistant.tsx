@@ -1242,9 +1242,9 @@ For accurate measurements of your specific network, I recommend using our Range 
           >
             <div className="flex items-center">
               <img
-                src="https://learn.doodlelabs.com/hubfs/mesh%20rider%20logo.png"
-                alt="Mesh Rider Logo"
-                className="h-12 w-auto mr-4"
+                src="/logo.png"
+              alt="Mesh Rider"
+              className="h-12 w-auto mr-4"
               />
               <div>
                 <h1 className="text-2xl font-bold text-white">
@@ -1541,7 +1541,7 @@ For accurate measurements of your specific network, I recommend using our Range 
                         </div>
                       )}
 
-                   
+
                       {msg.charts && msg.charts.length > 0 && (
                         <div className="mt-6 bg-gray-850 rounded-xl overflow-hidden border border-gray-700 shadow-lg">
                           <div className="bg-gradient-to-r from-gray-800 to-gray-750 p-4 border-b border-gray-700">
@@ -1634,47 +1634,47 @@ For accurate measurements of your specific network, I recommend using our Range 
                   </div>
                 </motion.div>
               )}
-                {/* Input Area */}
-                <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 bg-gray-800">
+              {/* Input Area */}
+              <form onSubmit={handleSubmit} className="p-4 border-t border-gray-700 bg-gray-800">
                 <div className="flex items-start gap-2">
                   <motion.div
-                  animate={animateInput ? { scale: [1, 1.02, 1] } : {}}
-                  transition={{ duration: 0.3 }}
-                  className="flex-1 relative"
+                    animate={animateInput ? { scale: [1, 1.02, 1] } : {}}
+                    transition={{ duration: 0.3 }}
+                    className="flex-1 relative"
                   >
-                  <textarea
-                    ref={inputRef}
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    onFocus={() => setAnimateInput(false)}
-                    placeholder="Type your message or question here..."
-                    rows={3}
-                    className="w-full p-3 bg-gray-750 border border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:outline-none text-black placeholder-gray-500 resize-none"
-                  />
-                  {input.length > 0 && (
-                    <motion.button
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.8 }}
-                    type="button"
-                    onClick={() => setInput('')}
-                    className="absolute right-3 top-3 p-1 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400"
-                    >
-                    <X size={14} />
-                    </motion.button>
-                  )}
+                    <textarea
+                      ref={inputRef}
+                      value={input}
+                      onChange={e => setInput(e.target.value)}
+                      onFocus={() => setAnimateInput(false)}
+                      placeholder="Type your message or question here..."
+                      rows={3}
+                      className="w-full p-3 bg-gray-750 border border-gray-700 rounded-xl focus:ring-2 focus:ring-violet-500 focus:outline-none text-black placeholder-gray-500 resize-none"
+                    />
+                    {input.length > 0 && (
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        type="button"
+                        onClick={() => setInput('')}
+                        className="absolute right-3 top-3 p-1 rounded-full bg-gray-700 hover:bg-gray-600 text-gray-400"
+                      >
+                        <X size={14} />
+                      </motion.button>
+                    )}
                   </motion.div>
                   <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  type="submit"
-                  disabled={isLoading || !input.trim()}
-                  className={`p-3 rounded-xl ${isLoading || !input.trim()
-                    ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-900/30 hover:from-violet-500 hover:to-indigo-500'
-                    } transition-all`}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type="submit"
+                    disabled={isLoading || !input.trim()}
+                    className={`p-3 rounded-xl ${isLoading || !input.trim()
+                      ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-900/30 hover:from-violet-500 hover:to-indigo-500'
+                      } transition-all`}
                   >
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
                   </motion.button>
                 </div>
 

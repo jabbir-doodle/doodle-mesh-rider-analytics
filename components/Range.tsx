@@ -107,7 +107,7 @@ const RangeCalculator: React.FC = () => {
                 <motion.div initial="hidden" animate="visible" variants={Animations.containerVariants} className="space-y-8">
                     <motion.div variants={Animations.itemVariants} className="flex items-center mb-6">
                         <div className="flex items-center">
-                            <img src="https://learn.doodlelabs.com/hubfs/mesh%20rider%20logo.png" alt="Mesh Rider Logo" className="h-12 w-auto mr-4" />
+                            <img src="/logo.png" alt="Mesh Rider Logo" className="h-12 w-auto mr-4" />
                             <div>
                                 <h1 className="text-2xl font-bold text-white">Mesh Rider Range Calculator</h1>
                                 <p className="text-gray-400 mt-1">Advanced RF analysis for optimizing mesh network range</p>

@@ -1,0 +1,6 @@
+﻿{
+  "appId": "com.doodle.meshtoolbox",
+  "appName": "MeshToolbox",
+  "webDir": "out",
+  "bundledWebRuntime": false
+}

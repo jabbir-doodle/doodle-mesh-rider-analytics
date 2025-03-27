@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import FloatingChatButton from './FloatingChatButton';
 import ApiManagementPlatform from './ApiManagementPlatform';
 import FirmwarePortal from './FirmwarePortal';
+import MeshRadioPortal from './MeshRadioPortal';
 
 interface Tool {
     id: string;
@@ -97,32 +98,40 @@ const MeshToolbox: FC = () => {
             color: "#06B6D4",    // Changed from #F43F5E
             iconBg: "#CFFAFE",  // Changed from #FFE4E6
         },
-        // {
-        //     id: "ai",
-        //     title: "Mesh Rider AI Agent",
-        //     description: "Get instant help and insights with our AI-powered assistant.",
-        //     icon: "🤖",
-        //     color: "#F59E0B",
-        //     iconBg: "#FEF3C7",
-        //     comingSoon: true
-        // },
-        // {
-        //     id: "api",
-        //     title: "API Management",
-        //     description: "Configure and test network APIs with our interactive console.",
-        //     icon: "🔌",
-        //     color: "#EC4899",
-        //     iconBg: "#FCE7F3",
-        //     comingSoon: true // Add this flag
-        // },
-        // {
-        //     id: "meshconnect",
-        //     title: "Mesh Rider Firmware",
-        //     description: "Manage firmware updates with comprehensive versioning control system.",
-        //     icon: "🔄",
-        //     color: "#0EA5E9",
-        //     iconBg: "#BAE6FD",
-        // },
+        {
+            id: "ai",
+            title: "Mesh Rider AI Agent",
+            description: "Get instant help and insights with our AI-powered assistant.",
+            icon: "🤖",
+            color: "#F59E0B",
+            iconBg: "#FEF3C7",
+            comingSoon: true
+        },
+        {
+            id: "api",
+            title: "API Management",
+            description: "Configure and test network APIs with our interactive console.",
+            icon: "🔌",
+            color: "#EC4899",
+            iconBg: "#FCE7F3",
+            comingSoon: true // Add this flag
+        },
+        {
+            id: "meshconnect",
+            title: "Mesh Rider Firmware",
+            description: "Manage firmware updates with comprehensive versioning control system.",
+            icon: "🔄",
+            color: "#0EA5E9",
+            iconBg: "#BAE6FD",
+        },
+        {
+            id: "meshmulti",
+            title: "Mesh Rider Multi-Device",
+            description: "Manage multiple devices with ease and efficiency.",
+            icon: "🔄",
+            color: "#0EA5E9",
+            iconBg: "#BAE6FD",
+        },
     ];
 
     // Minimal inline icons for each tool card
@@ -188,6 +197,16 @@ const MeshToolbox: FC = () => {
                         <path d="M17 16L21 20M21 16L17 20" stroke="#EC4899" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                 );
+            case 'meshmulti':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 16V21" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M8 16H16" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <rect x="4" y="3" width="16" height="13" rx="2" stroke="#0EA5E9" strokeWidth="2" />
+                        <path d="M9 9L12 12L15 9" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M12 12V6" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
             default:
                 return null;
         }
@@ -240,16 +259,28 @@ const MeshToolbox: FC = () => {
         return (
             <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
                 <div className="max-w-6xl mx-auto p-6 pb-24">
-
                     <FirmwarePortal
                         isDarkMode={isDarkMode}
-                        onBack={() => setActiveTool('')}  // Add this line to navigate back
+                        onBack={() => {
+                            console.log("Back button clicked");
+                            setActiveTool(null); // or router.push('/') or whatever navigation you need
+                        }}
                     />
                 </div>
             </div>
         );
     }
 
+    if (activeTool === 'meshmulti') {
+        return (
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
+                    <ToolHeader title="Multi Device" />
+                    <MeshRadioPortal />
+                </div>
+            </div>
+        );
+    }
     if (activeTool === 'logviewer') {
         return (
             <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">

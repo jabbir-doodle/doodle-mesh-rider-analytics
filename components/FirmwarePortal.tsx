@@ -1,4 +1,4 @@
-import React, { useState, FC, useEffect } from 'react';
+import React, { useState, FC, useEffect, useRef, useLayoutEffect } from 'react';
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Download,
@@ -24,7 +24,6 @@ import {
     Wifi
 } from 'lucide-react';
 
-// Particle Background Component
 const ParticleBackground = () => (
     <div className="fixed inset-0 z-0">
         <div className="absolute inset-0 bg-gradient-to-b from-gray-900 to-black opacity-80"></div>
@@ -76,6 +75,7 @@ interface BaseFirmware {
     developerNotes?: string;
     commitId?: string;
     testStatus?: string;
+    releaseNotesUrl?: string;
 }
 
 interface FirmwareData {
@@ -87,7 +87,7 @@ interface FirmwareData {
 
 interface FirmwarePortalProps {
     isDarkMode?: boolean;
-    onBack?: () => void; // Add this new prop
+    onBack?: () => void;
 }
 
 const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) => {
@@ -103,6 +103,11 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
     const [advancedSearch, setAdvancedSearch] = useState(false);
+    const [selectedModel, setSelectedModel] = useState('');
+    const [selectedSecurity, setSelectedSecurity] = useState('');
+    const [selectedDateRange, setSelectedDateRange] = useState('');
+
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const checkDevice = () => {
@@ -117,15 +122,27 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
         };
     }, []);
 
-    useEffect(() => {
-        // Force scroll to top when component mounts
+    useLayoutEffect(() => {
         window.scrollTo(0, 0);
-        document.body.scrollTop = 0;
-        document.documentElement.scrollTop = 0;
 
-        // Reset expanded version when changing tabs to avoid content being pushed down
+        if (containerRef.current) {
+            containerRef.current.scrollTop = 0;
+        }
+
+        const timer = setTimeout(() => {
+            window.scrollTo(0, 0);
+            document.documentElement.scrollTop = 0;
+            document.body.scrollTop = 0;
+
+            if (containerRef.current) {
+                containerRef.current.scrollTop = 0;
+            }
+        }, 10);
+
         setExpandedVersion('');
-    }, [activeTab]); // Add activeTab as a dependency to reset scroll on tab change
+
+        return () => clearTimeout(timer);
+    }, [activeTab]);
 
     const firmwareData: FirmwareData = {
         stable: [
@@ -135,7 +152,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                 size: '15.8 MB',
                 status: 'current',
                 hardwareModels: ['RM-2030', 'RM-5700', 'RM-6200'],
-                downloadUrl: '#',
+                downloadUrl: 'https://doodlelabs.sharepoint.com/:u:/s/Website/ERJVo2DFqXlLqpi3rBPRip8BwTAb4Zxvm8DNyuiz3nQ09w?e=Dz8YNY',
                 changes: [
                     'Added support in the automatic calibration restoration daemon for RM-2030 model variants.'
                 ],
@@ -149,7 +166,8 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                     'Hardware revision A4 or newer for RM-2030'
                 ],
                 hasTechnicalDocumentation: true,
-                compatibilityScore: 98
+                compatibilityScore: 98,
+                releaseNotesUrl: 'https://doodlelabs.sharepoint.com/:b:/s/Website/EYourReleaseNotesURL'
             },
             {
                 version: 'firmware-2024-10.3',
@@ -193,6 +211,28 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                 ],
                 hasTechnicalDocumentation: true,
                 compatibilityScore: 90
+            },
+            {
+                version: 'firmware-2024-10.1',
+                releaseDate: '2024-10-05',
+                size: '15.4 MB',
+                status: 'previous',
+                hardwareModels: ['RM-2030', 'RM-5700', 'RM-6200'],
+                downloadUrl: '#',
+                changes: [
+                    'Added a daemon to automatically check the radio\'s power calibration table and restore it if the table is corrupted.',
+                    'Calibration corruption has been detected on a very small percentage of devices and the root cause is an unstable power supply.'
+                ],
+                security: 'Medium',
+                checksums: {
+                    sha256: '4c6e8g0i2k4m6o8q0s2u4w6y8a0c2e4g6i8k0m2o4q6s8u0w2y4a6c8e0g',
+                    md5: 'g7h8i9j0k1l2m3n4o5p6q7'
+                },
+                dependencies: [
+                    'Bootloader v3.2 or later'
+                ],
+                hasTechnicalDocumentation: true,
+                compatibilityScore: 88
             }
         ],
         beta: [
@@ -205,7 +245,8 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                 downloadUrl: '#',
                 changes: [
                     'Improved signal processing algorithm with 15% better noise rejection.',
-                    'New advanced frequency scanning capabilities.'
+                    'New advanced frequency scanning capabilities.',
+                    'Enhanced Nimble compatibility with additional configuration options.'
                 ],
                 warning: 'Not recommended for production environments. May cause instability on RM-5700 models manufactured before 2023.',
                 checksums: {
@@ -233,7 +274,8 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                     'Integration of new DSP algorithms for adaptive noise cancellation.',
                     'Prototype implementation of dynamic frequency allocation for dense deployments.',
                     'API endpoint improvements for third-party integration.',
-                    'Debug tools for signal analysis.'
+                    'Debug tools for signal analysis.',
+                    'Enhanced internal messaging system with configurable network port.'
                 ],
                 warning: 'Development build. Unstable and not for production use.',
                 checksums: {
@@ -260,7 +302,24 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                 version.version.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 version.changes.some(change => change.toLowerCase().includes(searchQuery.toLowerCase()));
 
-            return matchesSearch;
+            const matchesModel = selectedModel === '' ||
+                version.hardwareModels.includes(selectedModel);
+
+            const matchesSecurity = selectedSecurity === '' ||
+                version.security === selectedSecurity;
+
+            // Date range filtering
+            let matchesDate = true;
+            if (selectedDateRange !== '') {
+                const daysAgo = parseInt(selectedDateRange);
+                const releaseDate = new Date(version.releaseDate);
+                const today = new Date();
+                const diffTime = Math.abs(today.getTime() - releaseDate.getTime());
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                matchesDate = diffDays <= daysAgo;
+            }
+
+            return matchesSearch && matchesModel && matchesSecurity && matchesDate;
         }) || [];
 
     const handleLogin = (e: React.FormEvent) => {
@@ -286,10 +345,37 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
         }
     };
 
-    const handleDownload = (firmwareVersion: string) => {
-        setNotificationMessage(`Downloading ${firmwareVersion}...`);
+    const handleDownload = (firmware: BaseFirmware) => {
+        // Set visual feedback that download is starting
+        setNotificationMessage(`Initiating download for ${firmware.version}...`);
         setShowNotification(true);
-        setTimeout(() => setShowNotification(false), 3000);
+
+        if (firmware.downloadUrl && firmware.downloadUrl !== '#') {
+            try {
+                // Use direct window.open for SharePoint links - more reliable than iframe
+                const downloadWindow = window.open(firmware.downloadUrl, '_blank');
+
+                // Check if popup was blocked
+                if (!downloadWindow || downloadWindow.closed || typeof downloadWindow.closed === 'undefined') {
+                    setNotificationMessage(`Download blocked by browser. Please allow popups for this site.`);
+                } else {
+                    // Set focus to the download window and update notification
+                    downloadWindow.focus();
+                    setNotificationMessage(`Download started for ${firmware.version}`);
+
+                    // Add a download tracking event here if needed
+                    console.log(`Download initiated for ${firmware.version}`);
+                }
+            } catch (error) {
+                setNotificationMessage(`Error initiating download. Try again or contact support.`);
+                console.error("Download error:", error);
+            }
+        } else {
+            setNotificationMessage(`Download not available for ${firmware.version}`);
+        }
+
+        // Keep notification visible slightly longer for better user feedback
+        setTimeout(() => setShowNotification(false), 4000);
     };
 
     const getStatusBadge = (status: string) => {
@@ -320,11 +406,40 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
         }
     };
 
+    const handleViewReleaseNotes = (firmware: BaseFirmware) => {
+        if (firmware.releaseNotesUrl) {
+            window.open(firmware.releaseNotesUrl, '_blank');
+            setNotificationMessage(`Opening release notes for ${firmware.version}`);
+        } else {
+            setNotificationMessage(`Release notes not available for ${firmware.version}`);
+        }
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 3000);
+    };
+
+    const getCompatibilityStatusClass = (score: number) => {
+        if (score > 90) return 'bg-green-500';
+        if (score > 75) return 'bg-yellow-500';
+        return 'bg-red-500';
+    }
+
+    const getReleaseDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return new Intl.DateTimeFormat('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }).format(date);
+    }
+
     return (
-        <div className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100">
+        <div
+            ref={containerRef}
+            className="min-h-screen bg-gradient-to-b from-gray-900 to-black text-gray-100 overflow-y-auto"
+        >
             <ParticleBackground />
 
-            {/* Add Back Button - Position it in the top left */}
+            {/* Back Button */}
             {onBack && (
                 <button
                     onClick={onBack}
@@ -344,12 +459,12 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className={`px-4 py-3 rounded-lg shadow-lg flex items-center ${notificationMessage.includes('Invalid')
+                        className={`px-4 py-3 rounded-lg shadow-lg flex items-center ${notificationMessage.includes('Invalid') || notificationMessage.includes('not available')
                             ? 'bg-red-600 text-white'
                             : 'bg-blue-600 text-white'
                             }`}
                     >
-                        {notificationMessage.includes('Invalid')
+                        {notificationMessage.includes('Invalid') || notificationMessage.includes('not available')
                             ? <AlertTriangle size={18} className="mr-2" />
                             : <Check size={18} className="mr-2" />
                         }
@@ -436,10 +551,76 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                 >
                     <motion.div variants={Animations.itemVariants} className="flex items-center mb-6">
                         <div className="flex items-center">
-                            <img src="https://learn.doodlelabs.com/hubfs/mesh%20rider%20logo.png" alt="Mesh Rider Logo" className="h-12 w-auto mr-4" />
+                            <img src="/logo.png" alt="Mesh Rider Logo" className="h-12 w-auto mr-4" />
                             <div>
                                 <h1 className="text-2xl font-bold text-white">Mesh Rider Firmware Management</h1>
-                                <p className="text-gray-400 mt-1">Network firmware deployment and version control</p>
+                                <p className="text-gray-400 mt-1">October 2024 Nimble Compatibility Release</p>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Release Overview Card with highlighted banner */}
+                    <motion.div variants={Animations.itemVariants} className="bg-gray-850 rounded-2xl overflow-hidden shadow-xl relative">
+                        <div className="absolute top-0 left-0 w-full bg-gradient-to-r from-amber-600 to-amber-500 py-1.5 px-4 text-white text-sm font-medium flex items-center justify-between">
+                            <span className="flex items-center">
+                                <Zap className="w-4 h-4 mr-2" />
+                                Latest Release
+                            </span>
+                            <span className="bg-white text-amber-600 px-2 py-0.5 rounded-full text-xs font-bold">
+                                OCT 2024
+                            </span>
+                        </div>
+                        <div className="p-6 pt-12 border-b border-gray-700">
+                            <h2 className="text-xl font-medium text-white flex items-center">
+                                <Zap className="w-5 h-5 mr-2 text-amber-400" />
+                                <span>October 2024 Nimble Compatibility Release</span>
+                            </h2>
+                        </div>
+                        <div className="p-6">
+                            <p className="text-gray-300 mb-4">
+                                The October 2024 Nimble Compatibility firmware release makes the internal VLAN partitioning
+                                optional (disabled by default) which simplifies compatibility with the Nimble transceiver.
+                                This release also allows keeping your configuration when upgrading firmware.
+                            </p>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                                <div className="bg-gray-800 rounded-xl p-4">
+                                    <h3 className="text-lg font-medium text-white mb-3 flex items-center">
+                                        <Radio className="w-4 h-4 mr-2 text-amber-400" />
+                                        <span>Supported Hardware</span>
+                                    </h3>
+                                    <ul className="space-y-2 text-gray-300">
+                                        <li className="flex items-start">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                                            <span className="text-sm">All Multiband Mesh Rider radios</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                                            <span className="text-sm">All mini/nano-OEM/Wearable (2023 update) Mesh Rider radios</span>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div className="bg-gray-800 rounded-xl p-4">
+                                    <h3 className="text-lg font-medium text-white mb-3 flex items-center">
+                                        <Info className="w-4 h-4 mr-2 text-amber-400" />
+                                        <span>Important Changes</span>
+                                    </h3>
+                                    <ul className="space-y-2 text-gray-300">
+                                        <li className="flex items-start">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                                            <span className="text-sm">Internal VLAN is disabled by default for Nimble compatibility</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                                            <span className="text-sm">Settings can be kept when upgrading from firmware after June 2024</span>
+                                        </li>
+                                        <li className="flex items-start">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 mr-2 flex-shrink-0"></div>
+                                            <span className="text-sm">Strongly recommended to upgrade without keeping existing settings</span>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
@@ -492,11 +673,14 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                     <select
                                                         id="model"
                                                         className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                                        value={selectedModel}
+                                                        onChange={(e) => setSelectedModel(e.target.value)}
                                                     >
                                                         <option value="">All Models</option>
                                                         <option value="RM-2030">RM-2030</option>
                                                         <option value="RM-5700">RM-5700</option>
                                                         <option value="RM-6200">RM-6200</option>
+                                                        <option value="RM-3050">RM-3050</option>
                                                     </select>
                                                 </div>
 
@@ -505,6 +689,8 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                     <select
                                                         id="security"
                                                         className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                                        value={selectedSecurity}
+                                                        onChange={(e) => setSelectedSecurity(e.target.value)}
                                                     >
                                                         <option value="">Any Level</option>
                                                         <option value="Critical">Critical</option>
@@ -518,6 +704,8 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                     <select
                                                         id="dateRange"
                                                         className="bg-gray-800 border border-gray-700 text-white text-sm rounded-lg focus:ring-amber-500 focus:border-amber-500 block w-full p-2.5"
+                                                        value={selectedDateRange}
+                                                        onChange={(e) => setSelectedDateRange(e.target.value)}
                                                     >
                                                         <option value="">Any Date</option>
                                                         <option value="7">Last 7 days</option>
@@ -526,6 +714,19 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                     </select>
                                                 </div>
                                             </div>
+
+                                            <div className="flex justify-end mt-4">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedModel('');
+                                                        setSelectedSecurity('');
+                                                        setSelectedDateRange('');
+                                                        setSearchQuery('');
+                                                    }}
+                                                    className="px-3 py-1.5 text-sm bg-gray-700 rounded-lg text-gray-300 hover:bg-gray-600 mr-2">
+                                                    Clear Filters
+                                                </button>
+                                            </div>
                                         </div>
                                     </motion.div>
                                 )}
@@ -533,7 +734,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                         </div>
                     </motion.div>
 
-                    {/* Firmware Categories - Make more prominent */}
+                    {/* Firmware Categories */}
                     <motion.div variants={Animations.itemVariants} className="mb-8">
                         <div className="flex items-center justify-between mb-6">
                             <h2 className="text-xl font-bold text-white flex items-center">
@@ -605,10 +806,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                         </div>
                     </motion.div>
 
-                    {/* System Status Cards */}
-
-
-                    {/* Firmware section header - More visible */}
+                    {/* Firmware section header */}
                     <motion.div variants={Animations.itemVariants} className="flex items-center justify-between mb-6 bg-blue-900/20 p-4 rounded-xl">
                         <div className="flex items-center">
                             <ArrowRight className="w-5 h-5 mr-2 text-amber-400" />
@@ -660,7 +858,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                         No Matching Firmware
                                     </h3>
                                     <p className="text-gray-400">
-                                        We couldn't find any firmware that matches your search. Try adjusting your search criteria.
+                                        We couldn't find any firmware that matches your search criteria. Try adjusting your search or filters.
                                     </p>
                                 </div>
                             )}
@@ -672,14 +870,28 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                     key={firmware.version}
                                     custom={index}
                                     variants={Animations.itemVariants}
-                                    className="bg-white-150 rounded-2xl overflow-hidden shadow-xl border border-black-100"
+                                    className="bg-gray-850 rounded-2xl overflow-hidden shadow-xl border border-gray-700"
                                 >
                                     {/* Card header */}
                                     <div
-                                        className={`p-5 cursor-pointer ${firmware.status === 'current' ? 'bg-gradient-to-r from-white-900/30 to-white-900/30' : ''
+                                        className={`p-5 cursor-pointer ${firmware.status === 'current'
+                                            ? 'bg-gradient-to-r from-green-900/30 to-green-900/20 relative'
+                                            : 'relative'
                                             }`}
                                         onClick={() => toggleVersionDetails(firmware.version)}
                                     >
+                                        {firmware.version === 'firmware-2024-10.4' && (
+                                            <div className="absolute top-0 left-0 bg-amber-500 text-white text-xs px-3 py-1 font-medium rounded-bl-lg">
+                                                October 2024 Release
+                                            </div>
+                                        )}
+                                        {/* {(firmware.version === 'firmware-2024-10.3' ||
+                                            firmware.version === 'firmware-2024-10.2' ||
+                                            firmware.version === 'firmware-2024-10.1') && (
+                                                <div className="absolute top-0 right-0 bg-blue-600/50 text-white text-xs px-3 py-1 font-medium rounded-bl-lg">
+                                                    October 2024 Release
+                                                </div>
+                                            )} */}
                                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                                             <div className="flex items-center">
                                                 {firmware.status === 'current' && (
@@ -697,7 +909,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                     </div>
                                                     <div className="mt-1 flex items-center text-xs text-gray-400">
                                                         <Calendar size={12} className="mr-1" />
-                                                        <span className="mr-3">{firmware.releaseDate}</span>
+                                                        <span className="mr-3">{getReleaseDate(firmware.releaseDate)}</span>
                                                         <Package size={12} className="mr-1" />
                                                         <span>{firmware.size}</span>
                                                     </div>
@@ -708,16 +920,21 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                 <motion.button
                                                     whileHover={{ scale: 1.03 }}
                                                     whileTap={{ scale: 0.97 }}
-                                                    className="mr-3 px-4 py-2 rounded-lg text-white text-sm font-medium bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-lg transition-all flex items-center"
+                                                    className="mr-3 px-4 py-2 rounded-lg text-white text-sm font-medium bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 shadow-lg transition-all flex items-center relative"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        handleDownload(firmware.version);
+                                                        handleDownload(firmware);
                                                     }}
                                                 >
                                                     <Download size={14} className="mr-2" /> Download
+                                                    {firmware.version === 'firmware-2024-10.4' && (
+                                                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full animate-pulse">
+                                                            NEW
+                                                        </span>
+                                                    )}
                                                 </motion.button>
                                                 <button
-                                                    className="p-2 rounded-full bg-white-700 text-gray-400 hover:bg-gray-600 hover:text-white transition-colors"
+                                                    className="p-2 rounded-full bg-gray-700 text-gray-400 hover:bg-gray-600 hover:text-white transition-colors"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         toggleVersionDetails(firmware.version);
@@ -762,7 +979,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                             {firmware.hardwareModels.map((model: string, index: number) => (
                                                                 <span
                                                                     key={index}
-                                                                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-white-700 text-gray-300 border border-gray-600"
+                                                                    className="px-3 py-1.5 rounded-full text-xs font-medium bg-gray-700 text-gray-300 border border-gray-600"
                                                                 >
                                                                     {model}
                                                                 </span>
@@ -815,12 +1032,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                             </div>
                                                             <div className="h-2 w-full bg-gray-700 rounded-full overflow-hidden">
                                                                 <div
-                                                                    className={`h-full rounded-full ${firmware.compatibilityScore > 90
-                                                                        ? 'bg-green-500'
-                                                                        : firmware.compatibilityScore > 70
-                                                                            ? 'bg-yellow-500'
-                                                                            : 'bg-red-500'
-                                                                        }`}
+                                                                    className={`h-full rounded-full ${getCompatibilityStatusClass(firmware.compatibilityScore)}`}
                                                                     style={{ width: `${firmware.compatibilityScore}%` }}
                                                                 ></div>
                                                             </div>
@@ -844,14 +1056,14 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                             <p className="text-xs font-medium mb-1 text-gray-400">
                                                                 SHA-256 Checksum:
                                                             </p>
-                                                            <div className="p-2 rounded bg-grey-900/50 text-xs text-blue-400 mb-2 break-all font-mono">
+                                                            <div className="p-2 rounded bg-gray-900/50 text-xs text-blue-400 mb-2 break-all font-mono">
                                                                 {firmware.checksums.sha256}
                                                             </div>
 
                                                             <p className="text-xs font-medium mb-1 text-gray-400">
                                                                 MD5 Checksum:
                                                             </p>
-                                                            <div className="p-2 rounded bg-black-900/50 text-xs text-gray-400 break-all font-mono">
+                                                            <div className="p-2 rounded bg-gray-900/50 text-xs text-gray-400 break-all font-mono">
                                                                 {firmware.checksums.md5}
                                                             </div>
                                                         </div>
@@ -860,6 +1072,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                                     {/* Documentation links */}
                                                     <div className="space-y-2">
                                                         <motion.button
+                                                            onClick={() => handleViewReleaseNotes(firmware)}
                                                             whileHover={{ scale: 1.03 }}
                                                             whileTap={{ scale: 0.97 }}
                                                             className="w-full py-2 px-3 rounded-lg text-sm font-medium flex items-center justify-center bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white transition-colors"
@@ -897,6 +1110,7 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                         </motion.div>
                     )}
 
+                    {/* Footer */}
                     <motion.div variants={Animations.itemVariants} className="text-center text-xs text-gray-400 mt-8">
                         <p>Mesh Rider Firmware Management Portal</p>
                         <p className="mt-1">© 2024 Doodle Labs. All rights reserved.</p>
@@ -946,13 +1160,13 @@ const FirmwarePortal: FC<FirmwarePortalProps> = ({ isDarkMode = true, onBack }) 
                                     className="block w-full px-3 py-2.5 rounded-lg text-sm bg-gray-800 border border-gray-700 text-white placeholder-gray-500 focus:ring-amber-500 focus:border-amber-500 focus:outline-none focus:ring-2"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="password"
+                                    placeholder="Enter your password"
                                 />
                             </div>
                             <div className="flex justify-between items-center">
                                 <button
                                     type="button"
-                                    className="px-4 py-2 rounded-lg text-sm font-medium bg-black-700 hover:bg-gray-600 text-gray-300 transition-colors"
+                                    className="px-4 py-2 rounded-lg text-sm font-medium bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
                                     onClick={() => setShowModal(false)}
                                 >
                                     Cancel

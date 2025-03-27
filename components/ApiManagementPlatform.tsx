@@ -218,7 +218,7 @@ const ApiManagementPlatform = () => {
         <header className="bg-gray-850 shadow-lg border-b border-gray-700">
           <div className="flex justify-between items-center px-4 py-3">
             <div className="flex items-center">
-              <img src="https://learn.doodlelabs.com/hubfs/mesh%20rider%20logo.png" alt="Doodle Labs Logo" className="h-10 w-auto mr-3" />
+              <img src="/logo.png" alt="Doodle Labs Logo" className="h-10 w-auto mr-3" />
               <h1 className="text-2xl font-bold text-white">Mesh Rider API Platform</h1>
             </div>
             <div className="flex space-x-3">
@@ -349,8 +349,8 @@ const ApiManagementPlatform = () => {
                     <span className="flex items-center"><Code size={14} className="mr-1.5" />Request</span>
                     <button className="text-gray-400 hover:text-violet-300" onClick={() => navigator.clipboard.writeText(requestBody)}><Copy size={14} /></button>
                   </div>
-                  <div className="flex-1 p-4 overflow-y-auto bg-gray-850">
-                    <textarea value={requestBody} onChange={(e) => setRequestBody(e.target.value)} className="w-full h-full font-mono text-sm resize-none bg-gray-850 text-gray-200 focus:outline-none" spellCheck="false" />
+                  <div className="flex-1 p-4 overflow-y-auto bg-black-850">
+                    <textarea value={requestBody} onChange={(e) => setRequestBody(e.target.value)} className="w-full h-full font-mono text-sm resize-none bg-black text-white focus:outline-none" spellCheck="false" />
                   </div>
                 </div>
 

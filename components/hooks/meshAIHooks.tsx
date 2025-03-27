@@ -572,7 +572,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ showInSidebar = false }) => {
                     >
                         <div className="flex items-center">
                             <img
-                                src="https://learn.doodlelabs.com/hubfs/mesh%20rider%20logo.png"
+                                src="/logo.png"
                                 alt="Mesh Rider Logo"
                                 className="h-12 w-auto mr-4"
                             />
