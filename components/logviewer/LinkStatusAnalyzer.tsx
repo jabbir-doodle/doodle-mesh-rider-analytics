@@ -463,7 +463,7 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
                text-gray-800 dark:text-white"
             >
               <Signal size={24} className="mb-2 text-blue-600" />
-              <span>RSSI + Noise</span>
+              <span>Signal Analysis</span>
             </button>
 
             <button
