@@ -20,13 +20,24 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-    const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
+    // Default to light theme
+    const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
     const [mounted, setMounted] = useState<boolean>(false);
 
     useEffect(() => {
         setMounted(true);
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
+        if (savedTheme) {
+            if (savedTheme === 'light') {
+                setIsDarkMode(false);
+                document.body.classList.add('light-mode');
+            } else {
+                setIsDarkMode(true);
+                document.body.classList.remove('light-mode');
+            }
+        } else {
+            // If no saved theme, default to light mode
+            localStorage.setItem('theme', 'light');
             setIsDarkMode(false);
             document.body.classList.add('light-mode');
         }
