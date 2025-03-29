@@ -82,56 +82,56 @@ const MeshToolbox: FC = () => {
             color: "#3B82F6",
             iconBg: "#DBEAFE",
         },
-        {
-            id: "range",
-            title: "Range Estimation",
-            description: "Optimize your network range with advanced analytics.",
-            icon: "📏",
-            color: "#8B5CF6",
-            iconBg: "#EDE9FE",
-        },
-        {
-            id: "app",
-            title: "Mesh Rider App",
-            description: "Control and monitor your network on the go.",
-            icon: "📱",
-            color: "#06B6D4",    // Changed from #F43F5E
-            iconBg: "#CFFAFE",  // Changed from #FFE4E6
-        },
-        {
-            id: "ai",
-            title: "Mesh Rider AI Agent",
-            description: "Get instant help and insights with our AI-powered assistant.",
-            icon: "🤖",
-            color: "#F59E0B",
-            iconBg: "#FEF3C7",
-            comingSoon: true
-        },
-        {
-            id: "api",
-            title: "API Management",
-            description: "Configure and test network APIs with our interactive console.",
-            icon: "🔌",
-            color: "#EC4899",
-            iconBg: "#FCE7F3",
-            comingSoon: true // Add this flag
-        },
-        {
-            id: "meshconnect",
-            title: "Mesh Rider Firmware",
-            description: "Manage firmware updates with comprehensive versioning control system.",
-            icon: "🔄",
-            color: "#0EA5E9",
-            iconBg: "#BAE6FD",
-        },
-        {
-            id: "meshmulti",
-            title: "Mesh Rider Multi-Device",
-            description: "Manage multiple devices with ease and efficiency.",
-            icon: "🔄",
-            color: "#0EA5E9",
-            iconBg: "#BAE6FD",
-        },
+        // {
+        //     id: "range",
+        //     title: "Range Estimation",
+        //     description: "Optimize your network range with advanced analytics.",
+        //     icon: "📏",
+        //     color: "#8B5CF6",
+        //     iconBg: "#EDE9FE",
+        // },
+        // {
+        //     id: "app",
+        //     title: "Mesh Rider App",
+        //     description: "Control and monitor your network on the go.",
+        //     icon: "📱",
+        //     color: "#06B6D4",    // Changed from #F43F5E
+        //     iconBg: "#CFFAFE",  // Changed from #FFE4E6
+        // },
+        // {
+        //     id: "ai",
+        //     title: "Mesh Rider AI Agent",
+        //     description: "Get instant help and insights with our AI-powered assistant.",
+        //     icon: "🤖",
+        //     color: "#F59E0B",
+        //     iconBg: "#FEF3C7",
+        //     comingSoon: true
+        // },
+        // {
+        //     id: "api",
+        //     title: "API Management",
+        //     description: "Configure and test network APIs with our interactive console.",
+        //     icon: "🔌",
+        //     color: "#EC4899",
+        //     iconBg: "#FCE7F3",
+        //     comingSoon: true // Add this flag
+        // },
+        // {
+        //     id: "meshconnect",
+        //     title: "Mesh Rider Firmware",
+        //     description: "Manage firmware updates with comprehensive versioning control system.",
+        //     icon: "🔄",
+        //     color: "#0EA5E9",
+        //     iconBg: "#BAE6FD",
+        // },
+        // {
+        //     id: "meshmulti",
+        //     title: "Mesh Rider Multi-Device",
+        //     description: "Manage multiple devices with ease and efficiency.",
+        //     icon: "🔄",
+        //     color: "#0EA5E9",
+        //     iconBg: "#BAE6FD",
+        // },
     ];
 
     // Minimal inline icons for each tool card

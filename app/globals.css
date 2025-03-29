@@ -86,7 +86,34 @@ html {
   text-align: center;
   white-space: nowrap;
 }
+/* Add this to your global CSS file */
+/* This targets all MetricCard components and fixes their backgrounds */
+.metric-card {
+  /* Light mode */
+  @media (prefers-color-scheme: light) {
+    background-color: #f9fafb !important; /* light gray for light mode */
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    background-color: #1f2937 !important; /* dark gray for dark mode */
+    border: 1px solid #374151 !important;
+  }
+}
 
+/* Fix hover states */
+.metric-card:hover {
+  /* Light mode */
+  @media (prefers-color-scheme: light) {
+    background-color: #f3f4f6 !important; /* slightly darker on hover in light mode */
+  }
+  
+  /* Dark mode */
+  @media (prefers-color-scheme: dark) {
+    background-color: #263244 !important; /* slightly lighter on hover in dark mode */
+  }
+}
 @keyframes glow {
   from {
     text-shadow: 0 0 20px rgba(0, 242, 254, 0.5);

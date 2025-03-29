@@ -1,6 +1,5 @@
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
-import RssiNoiseChart from './RssiNoiseChart';
 import { formatTimestamp, formatTimeAxis, formatRelativeTime, formatDateCompact } from '@/utils/timeFormatters';
 import {
   LineChart,
@@ -32,12 +31,14 @@ import { MetricCard } from '../shared/MetricCard';
 import StationDetails from './StationDetails';
 import OperationsDetails from './OperationsDetails';
 import { parseLogFile, MeshStat } from '@/utils/logParser';
+import RFLogAnalyzer from './RFLogAnalyzer';
 import FileUpload from './LogFileUpload';
 import { StationStat } from '@/types';
 import MeshDetails from './MeshDetails';
 import { formatMacAddress, macToIpAddress } from '@/utils/networkHelpers';
 import ParticleBackground from '../ParticleBackground';
 import SignalHeatmap from './SignalHeatmap';
+import RFSignalAnalysisChart from './RFSignalAnalysisChart';
 
 interface Props {
   initialData?: string;
@@ -55,7 +56,7 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const chartContainerRef = useRef<HTMLDivElement>(null);
-
+  const [showRfDiagnostics, setShowRfDiagnostics] = useState(false);
   useEffect(() => {
     const checkDevice = () => {
       setIsMobile(window.innerWidth < 768);
@@ -98,6 +99,15 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
       console.error('Error parsing log file:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+  const handleRfDiagnosticsClick = () => {
+    setShowRfDiagnostics(true);
+    setShowRssiNoiseChart(false);
+    setShowCombinedMetrics(false);
+    setSelectedMetric('');
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
     }
   };
 
@@ -233,7 +243,19 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
       </div>
     </div>
   );
-
+  <button
+    onClick={() => {
+      setShowRfDiagnostics(true);
+      setShowRssiNoiseChart(false);
+      setShowCombinedMetrics(false);
+      setSelectedMetric('');
+      setIsMobileMenuOpen(false);
+    }}
+    className="p-4 bg-gray-800 rounded-lg flex items-center gap-2"
+  >
+    <Radio size={20} className="text-purple-500" />
+    <span className="text-white">RF Diagnostics</span>
+  </button>
 
   return (
     <div className="fixed inset-0 bg-gray-950 overflow-auto">
@@ -322,7 +344,19 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
                     <Activity size={20} className="text-indigo-500" />
                     <span className="text-white">Combined Metrics</span>
                   </button>
-
+                  <button
+                    onClick={() => {
+                      setShowRfDiagnostics(true);
+                      setShowRssiNoiseChart(false);
+                      setShowCombinedMetrics(false);
+                      setSelectedMetric('');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className="p-4 bg-gray-800 rounded-lg flex items-center gap-2"
+                  >
+                    <Radio size={20} className="text-purple-500" />
+                    <span className="text-white">RF Diagnostics</span>
+                  </button>
                   <button
                     onClick={() => {
                       setLogData([]);
@@ -395,7 +429,7 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
             )}
           </div>
 
-          {/* Operations Details Card */}
+          {/* Operations Details Card
           <div className="mb-6 md:mb-8">
             <OperationsDetails
               operChan={latestData.channel}
@@ -404,112 +438,89 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
               lnaStatus={Number(latestData.lnaStatus)}
               timestamp={String(latestData.localtime)}
             />
-          </div>
-
+          </div> */}
           {/* Performance Metrics Header */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center gap-2">
-              <Server className="h-4 w-4 md:h-5 md:w-5 text-blue-500" />
-              <h2 className="text-base md:text-lg font-semibold text-white">Performance Metrics</h2>
+              <Server className="h-5 w-5 text-blue-600" />
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Performance Metrics</h2>
             </div>
-
-            {/* Controls - Hidden on mobile (shown in menu) */}
-            {!isMobile && (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setShowRssiNoiseChart(!showRssiNoiseChart);
-                    if (!showRssiNoiseChart) {
-                      setSelectedMetric('');
-                      setShowCombinedMetrics(false);
-                    }
-                  }}
-                  className="px-2 md:px-4 py-1 md:py-2 bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm rounded-lg flex items-center gap-1 md:gap-2"
-                >
-                  <Signal className="h-3 w-3 md:h-4 md:w-4" />
-                  {showRssiNoiseChart ? 'Hide RSSI+Noise' : 'Show RSSI+Noise'}
-                </button>
-                <button
-                  onClick={() => {
-                    setShowCombinedMetrics(!showCombinedMetrics);
-                    if (!showCombinedMetrics) {
-                      setShowRssiNoiseChart(false);
-                      setSelectedMetric('');
-                    } else {
-                      setShowRssiNoiseChart(true);
-                    }
-                  }}
-                  className="px-2 md:px-4 py-1 md:py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm rounded-lg flex items-center gap-1 md:gap-2"
-                >
-                  <Activity className="h-3 w-3 md:h-4 md:w-4" />
-                  {showCombinedMetrics ? 'Hide All Metrics' : 'Show All Metrics'}
-                </button>
-              </div>
-            )}
           </div>
 
-          {/* Metric cards grid - Responsive layout */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6 md:mb-8">
-            <MetricCard
-              title="RSSI + Noise"
-              value=""
-              unit=""
-              icon={Signal}
-              status="normal"
+          {/* Replace the entire MetricCard section with these simple buttons */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <button
               onClick={() => {
                 setShowRssiNoiseChart(true);
                 setShowCombinedMetrics(false);
+                setShowRfDiagnostics(false);
                 setSelectedMetric('');
               }}
-              clickInstruction="Click to show"
-            />
-            <MetricCard
-              title="Channel Activity"
-              value=""
-              unit=""
-              icon={Activity}
-              status="normal"
+              className="flex flex-col items-center justify-center p-4 rounded-lg 
+               border border-gray-300 dark:border-gray-700
+               bg-white dark:bg-gray-800 
+               hover:bg-blue-50 dark:hover:bg-blue-900/20
+               text-gray-800 dark:text-white"
+            >
+              <Signal size={24} className="mb-2 text-blue-600" />
+              <span>RSSI + Noise</span>
+            </button>
+
+            <button
               onClick={() => {
                 setSelectedMetric('activity');
                 setShowRssiNoiseChart(false);
                 setShowCombinedMetrics(false);
+                setShowRfDiagnostics(false);
               }}
-              clickInstruction="Click to show"
-            />
-            <MetricCard
-              title="System Performance"
-              value=""
-              unit=""
-              icon={Cpu}
-              status="normal"
+              className="flex flex-col items-center justify-center p-4 rounded-lg 
+               border border-gray-300 dark:border-gray-700
+               bg-white dark:bg-gray-800 
+               hover:bg-green-50 dark:hover:bg-green-900/20
+               text-gray-800 dark:text-white"
+            >
+              <Activity size={24} className="mb-2 text-green-600" />
+              <span>Channel Activity</span>
+            </button>
+
+            <button
               onClick={() => {
                 setSelectedMetric('cpu');
                 setShowRssiNoiseChart(false);
                 setShowCombinedMetrics(false);
               }}
-              clickInstruction="Click to show"
-            />
-            <MetricCard
-              title="Memory Available"
-              value=""
-              unit=""
-              icon={Database}
-              status="normal"
-              onClick={() => {
-                setSelectedMetric('memory');
-                setShowRssiNoiseChart(false);
-                setShowCombinedMetrics(false);
-              }}
-              clickInstruction="Click to show"
-            />
-          </div>
+              className="flex flex-col items-center justify-center p-4 rounded-lg 
+               border border-gray-300 dark:border-gray-700
+               bg-white dark:bg-gray-800 
+               hover:bg-purple-50 dark:hover:bg-purple-900/20
+               text-gray-800 dark:text-white"
+            >
+              <Cpu size={24} className="mb-2 text-purple-600" />
+              <span>System Performance</span>
+            </button>
 
+            <button
+              onClick={handleRfDiagnosticsClick}
+              className="flex flex-col items-center justify-center p-4 rounded-lg 
+               border border-gray-300 dark:border-gray-700
+               bg-white dark:bg-gray-800 
+               hover:bg-indigo-50 dark:hover:bg-indigo-900/20
+               text-gray-800 dark:text-white"
+            >
+              <Radio size={24} className="mb-2 text-indigo-600" />
+              <span>RF Diagnostics</span>
+            </button>
+          </div>
           {/* Show either the combined metrics chart or the individual metric charts */}
           {showCombinedMetrics ? (
             <CombinedMetricsChart />
           ) : showRssiNoiseChart ? (
             <div className="bg-gray-900 p-4 md:p-6 rounded-lg mb-6 md:mb-8">
-              <RssiNoiseChart logData={logData} />
+              <RFSignalAnalysisChart logData={logData} />
+            </div>
+          ) : showRfDiagnostics ? (
+            <div className="bg-gray-900 p-4 md:p-6 rounded-lg mb-6 md:mb-8">
+              <RFLogAnalyzer logData={logData} />
             </div>
           ) : (
             <div id="performance-graphs" className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
@@ -683,7 +694,7 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
                           <span>Inact: {latestStationData.inactive}ms</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          Ant1: {latestStationData.rssi_ant[0]} dBm, Ant2: {latestStationData.rssi_ant[1]} dBm
+                          Ant1: {latestStationData.rssi_ant?.[0] ?? 'N/A'} dBm, Ant2: {latestStationData.rssi_ant?.[1] ?? 'N/A'} dBm
                         </div>
                       </div>
                       <div className="mt-2 md:mt-0 md:text-right">
@@ -713,13 +724,12 @@ const LinkStatusAnalyzer: React.FC<Props> = ({ initialData, onBack }) => {
           {/* Modal components - These appear over everything else */}
           {selectedMeshNode && (
             <MeshDetails
-              node={selectedMeshNode}
-              timeSeriesData={getMeshNodeTimeSeriesData(selectedMeshNode.orig_address)}
-              localtime={latestData.localtime}
+              node={selectedMeshNode as any}
+              timeSeriesData={getMeshNodeTimeSeriesData(selectedMeshNode.orig_address) as any}
+              localtime={latestData.localtime as number}
               onClose={() => setSelectedMeshNode(null)}
             />
           )}
-
           {selectedStation && (
             <StationDetails
               station={latestData.stations.find((s: any) => s.mac === selectedStation.mac) || selectedStation}

@@ -29,7 +29,7 @@ export function parseLogFile(content: string): LinkStateData[] {
         memory: Math.round(data.sysinfo.freemem / (1024 * 1024)),
         channel: data.oper_chan,
         frequency: data.oper_freq,
-        channelWidth: data.chan_width,
+        channelWidth: typeof data.chan_width === 'object' ? 0 : data.chan_width,
         lnaStatus: data.lna_status,
         stations: data.sta_stats || [],
         meshNodes: data.mesh_stats || [],
