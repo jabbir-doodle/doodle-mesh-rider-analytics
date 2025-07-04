@@ -16,6 +16,7 @@ import FloatingChatButton from './FloatingChatButton';
 import ApiManagementPlatform from './ApiManagementPlatform';
 import FirmwarePortal from './FirmwarePortal';
 import MeshRadioPortal from './MeshRadioPortal';
+import Troubleshoot from './Troubleshoot';
 
 interface Tool {
     id: string;
@@ -82,56 +83,71 @@ const MeshToolbox: FC = () => {
             color: "#3B82F6",
             iconBg: "#DBEAFE",
         },
-        // {
-        //     id: "range",
-        //     title: "Range Estimation",
-        //     description: "Optimize your network range with advanced analytics.",
-        //     icon: "📏",
-        //     color: "#8B5CF6",
-        //     iconBg: "#EDE9FE",
-        // },
-        // {
-        //     id: "app",
-        //     title: "Mesh Rider App",
-        //     description: "Control and monitor your network on the go.",
-        //     icon: "📱",
-        //     color: "#06B6D4",    // Changed from #F43F5E
-        //     iconBg: "#CFFAFE",  // Changed from #FFE4E6
-        // },
-        // {
-        //     id: "ai",
-        //     title: "Mesh Rider AI Agent",
-        //     description: "Get instant help and insights with our AI-powered assistant.",
-        //     icon: "🤖",
-        //     color: "#F59E0B",
-        //     iconBg: "#FEF3C7",
-        //     comingSoon: true
-        // },
-        // {
-        //     id: "api",
-        //     title: "API Management",
-        //     description: "Configure and test network APIs with our interactive console.",
-        //     icon: "🔌",
-        //     color: "#EC4899",
-        //     iconBg: "#FCE7F3",
-        //     comingSoon: true // Add this flag
-        // },
-        // {
-        //     id: "meshconnect",
-        //     title: "Mesh Rider Firmware",
-        //     description: "Manage firmware updates with comprehensive versioning control system.",
-        //     icon: "🔄",
-        //     color: "#0EA5E9",
-        //     iconBg: "#BAE6FD",
-        // },
-        // {
-        //     id: "meshmulti",
-        //     title: "Mesh Rider Multi-Device",
-        //     description: "Manage multiple devices with ease and efficiency.",
-        //     icon: "🔄",
-        //     color: "#0EA5E9",
-        //     iconBg: "#BAE6FD",
-        // },
+        {
+            id: "range",
+            title: "Range Estimation",
+            description: "Optimize your network range with advanced analytics.",
+            icon: "📏",
+            color: "#8B5CF6",
+            iconBg: "#EDE9FE",
+        },
+        {
+            id: "app",
+            title: "Mesh Rider App",
+            description: "Control and monitor your network on the go.",
+            icon: "📱",
+            color: "#06B6D4",    // Changed from #F43F5E
+            iconBg: "#CFFAFE",  // Changed from #FFE4E6
+        },
+        {
+            id: "ai",
+            title: "Mesh Rider AI Agent",
+            description: "Get instant help and insights with our AI-powered assistant.",
+            icon: "🤖",
+            color: "#F59E0B",
+            iconBg: "#FEF3C7",
+        },
+        {
+            id: "api",
+            title: "API Management",
+            description: "Configure and test network APIs with our interactive console.",
+            icon: "🔌",
+            color: "#EC4899",
+            iconBg: "#FCE7F3",
+        },
+        {
+            id: "meshconnect",
+            title: "Mesh Rider Firmware",
+            description: "Manage firmware updates with comprehensive versioning control system.",
+            icon: "🔄",
+            color: "#0EA5E9",
+            iconBg: "#BAE6FD",
+        },
+        {
+            id: "meshmulti",
+            title: "Mesh Rider Multi-Device",
+            description: "Manage multiple devices with ease and efficiency.",
+            icon: "🔄",
+            color: "#0EA5E9",
+            iconBg: "#BAE6FD",
+        },
+        {
+            id: "troubleshoot",
+            title: "Troubleshoot",
+            description: "Diagnose and resolve network issues with guided troubleshooting.",
+            icon: "🔧",
+            color: "#DC2626",
+            iconBg: "#FEE2E2",
+        },
+        {
+            id: "techlibrary",
+            title: "Tech Library",
+            description: "Access comprehensive technical documentation and resources.",
+            icon: "📚",
+            color: "#7C3AED",
+            iconBg: "#EDE9FE",
+            comingSoon: true,
+        },
     ];
 
     // Minimal inline icons for each tool card
@@ -205,6 +221,22 @@ const MeshToolbox: FC = () => {
                         <rect x="4" y="3" width="16" height="13" rx="2" stroke="#0EA5E9" strokeWidth="2" />
                         <path d="M9 9L12 12L15 9" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                         <path d="M12 12V6" stroke="#0EA5E9" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                );
+            case 'troubleshoot':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 8V12M12 16H12.01" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="#DC2626" strokeWidth="2" />
+                    </svg>
+                );
+            case 'techlibrary':
+                return (
+                    <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none">
+                        <path d="M4 19.5A2.5 2.5 0 016.5 17H20" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M9 7H15" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" />
+                        <path d="M9 11H13" stroke="#7C3AED" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                 );
             default:
@@ -334,6 +366,16 @@ const MeshToolbox: FC = () => {
                 <div className="max-w-6xl mx-auto p-6 pb-24">
                     <ToolHeader title="API Management Platform" />
                     <ApiManagementPlatform />
+                </div>
+            </div>
+        );
+    }
+    if (activeTool === 'troubleshoot') {
+        return (
+            <div className="min-h-screen overflow-y-auto transition-colors bg-gray-900">
+                <div className="max-w-6xl mx-auto p-6 pb-24">
+                    <ToolHeader title="Troubleshoot" />
+                    <Troubleshoot />
                 </div>
             </div>
         );

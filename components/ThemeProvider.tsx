@@ -10,7 +10,7 @@ interface ThemeContextType {
 
 // Initialize context with default values
 export const ThemeContext = createContext<ThemeContextType>({
-    isDarkMode: false,
+    isDarkMode: true,
     toggleTheme: () => { }
 });
 
@@ -20,8 +20,8 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-    // Default to light theme
-    const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+    // Default to dark theme
+    const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
     const [mounted, setMounted] = useState<boolean>(false);
 
     useEffect(() => {
@@ -36,10 +36,10 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
                 document.body.classList.remove('light-mode');
             }
         } else {
-            // If no saved theme, default to light mode
-            localStorage.setItem('theme', 'light');
-            setIsDarkMode(false);
-            document.body.classList.add('light-mode');
+            // If no saved theme, default to dark mode
+            localStorage.setItem('theme', 'dark');
+            setIsDarkMode(true);
+            document.body.classList.remove('light-mode');
         }
     }, []);
 
